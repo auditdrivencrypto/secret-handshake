@@ -6,29 +6,37 @@ var assert = require('assert')
 
 var handshake = require('../handshake')
 
-function agreement (stream) {
-  return handshake(function (shake) {
-    shake.write(R)
-    shake.read(32, function (err, data) {
-      assert.deepEqual(data, R)
-      shake.ready(stream)
-    })
+function agreement (cb) {
+  var stream = handshake()
+  var shake = stream.handshake
+  shake.write(R)
+  shake.read(32, function (err, data) {
+    assert.deepEqual(data, R)
+    cb(null, shake.rest())
   })
+
+  return stream
 }
 
 var hello = new Buffer('hello there did it work?', 'ascii')
 
-var client = agreement({
-  source: pull.values([hello, hello, hello]),
-  sink: pull.collect(function (err, data) {
-    assert.deepEqual(Buffer.concat(data), 
-      Buffer.concat([hello, hello, hello])
-    )
-    console.log('done')
-  })
+var client = agreement(function (err, stream) {
+  pull(
+    pull.values([hello, hello, hello]),
+    stream,
+    pull.collect(function (err, data) {
+      assert.deepEqual(
+        Buffer.concat(data),
+        Buffer.concat([hello, hello, hello])
+      )
+      console.log('done')
+    })
+  )
 })
 
-var server = agreement(pair()) //echo
+var server = agreement(function (err, stream) {
+  pull(stream, stream) //ECHO
+})
 
 function logger (name) {
   return pull.through(function (data) {
