@@ -1,13 +1,16 @@
 var sodium = require('sodium').api
+var pull = require('pull-stream')
 
 var keypair = sodium.crypto_box_keypair
 var concat = Buffer.concat
 var shared = sodium.crypto_scalarmult
 
-var handshake = require('./handshake')
+var boxes = require('pull-box-stream')
+var Handshake = require('./handshake')
 var hash = sodium.crypto_hash_sha256
 var sign = sodium.crypto_sign_detached
 var verify = sodium.crypto_sign_verify_detached
+
 //this is a simple secure handshake,
 //the client public key is passed in plain text,
 
@@ -40,95 +43,97 @@ var curvify_sk = sodium.crypto_sign_ed25519_sk_to_curve25519
 //client is Alice
 //create the client stream with the public key you expect to connect to.
 exports.client =
-exports.createClientStream = function (alice, bob_pub, createStream) {
+exports.createClientStream = function (alice, bob_pub, cb) {
   var alice_kx = keypair()
-  return handshake(function (shake) {
-    shake.write(alice_kx.publicKey)
+  var stream = Handshake()
+  var shake = stream.handshake
+  delete stream.handshake
 
-    shake.read(KEY_EX_LENGTH, function (err, bob_kx_pub) {
-      var secret = shared(alice_kx.secretKey, bob_kx_pub)
-      var shash = hash(secret)
-      //now we have agreed on the secret.
-      //this can be an encryption secret,
-      //or a hmac secret.
+  shake.write(alice_kx.publicKey)
 
-      var a_bob = shared(alice_kx.secretKey, curvify_pk(bob_pub))
+  shake.read(KEY_EX_LENGTH, function (err, bob_kx_pub) {
+    var secret = shared(alice_kx.secretKey, bob_kx_pub)
+    var shash = hash(secret)
+    //now we have agreed on the secret.
+    //this can be an encryption secret,
+    //or a hmac secret.
 
-      var secret2 = hash(concat([secret, a_bob]))
+    var a_bob = shared(alice_kx.secretKey, curvify_pk(bob_pub))
 
-      var sig = sign(concat([bob_pub, shash]), alice.secretKey)
+    var secret2 = hash(concat([secret, a_bob]))
 
-      //32 + 64 = 96 bytes
-      var hello = Buffer.concat([alice.publicKey, sig])
-      shake.write(box(hello, nonce, secret2))
+    var sig = sign(concat([bob_pub, shash]), alice.secretKey)
 
-      shake.read(16+server_auth_length, function (err, boxed_sig) {
+    //32 + 64 = 96 bytes
+    var hello = Buffer.concat([alice.publicKey, sig])
+    shake.write(box(hello, nonce, secret2))
 
-        var b_alice = shared(curvify_sk(alice.secretKey), bob_kx_pub)
-        var secret3 = hash(concat([secret2, b_alice]))
-        var sig = unbox(boxed_sig, nonce, secret3)
-        if(!verify(sig, concat([hello, shash]), bob_pub))
-          throw new Error('server not authenticated')
+    shake.read(16+server_auth_length, function (err, boxed_sig) {
 
-        shake.ready(createStream(
-          hash(concat([secret3, bob_kx_pub])),
-          hash(concat([secret3, alice_kx.publicKey]))
-        ))
-      })
+      var b_alice = shared(curvify_sk(alice.secretKey), bob_kx_pub)
+      var secret3 = hash(concat([secret2, b_alice]))
+      var sig = unbox(boxed_sig, nonce, secret3)
+      if(!verify(sig, concat([hello, shash]), bob_pub))
+        throw new Error('server not authenticated')
+
+      cb(null, shake.rest(), secret3, bob_pub)
     })
   })
+
+  return stream
 }
 
 
 //server is Bob.
 exports.server =
-exports.createServerStream = function (bob, authorize, createStream) {
+exports.createServerStream = function (bob, authorize, cb) {
 
-  return handshake(function (shake) {
-    shake.read(KEY_EX_LENGTH, function (err, alice_kx_pub) {
-      //ephemeral key exchange
-      var bob_kx = keypair()
-      var secret = shared(bob_kx.secretKey, alice_kx_pub)
+  var stream = Handshake()
 
-      var shash = hash(secret)
-      shake.write(bob_kx.publicKey)
-      shake.read(16+client_auth_length, function (err, boxed_hello) {
+  var shake = stream.handshake
+  delete stream.handshake
 
-        var a_bob = shared(curvify_sk(bob.secretKey), alice_kx_pub)
-        var secret2 = hash(concat([secret, a_bob]))
+  shake.read(KEY_EX_LENGTH, function (err, alice_kx_pub) {
+    //ephemeral key exchange
+    var bob_kx = keypair()
+    var secret = shared(bob_kx.secretKey, alice_kx_pub)
 
-        var hello = unbox(boxed_hello, nonce, secret2)
-        var alice_pub = hello.slice(0, 32)
-        var sig = hello.slice(32, client_auth_length)
+    var shash = hash(secret)
+    shake.write(bob_kx.publicKey)
+    shake.read(16+client_auth_length, function (err, boxed_hello) {
 
-        if(!verify(sig, concat([bob.publicKey, shash]), alice_pub))
-          throw new Error('server hang up - wrong number')
+      var a_bob = shared(curvify_sk(bob.secretKey), alice_kx_pub)
+      var secret2 = hash(concat([secret, a_bob]))
 
-        //check if the user wants to speak to alice.
-        authorize(alice_pub, function (err) {
-          if(err)
-            throw err
-          //alice is okay, send the okay back.
-          //just send the signature. 64 bytes.
+      var hello = unbox(boxed_hello, nonce, secret2)
+      var alice_pub = hello.slice(0, 32)
+      var sig = hello.slice(32, client_auth_length)
 
-          //by signing the secret, only a participant in the exchange
-          //can create a valid authentication.
-          var b_alice = shared(bob_kx.secretKey, curvify_pk(alice_pub))
-          var secret3 = hash(concat([secret2, b_alice]))
+      if(!verify(sig, concat([bob.publicKey, shash]), alice_pub))
+        throw new Error('server hang up - wrong number')
 
-          var okay = sign(concat([hello, shash]), bob.secretKey)
+      //check if the user wants to speak to alice.
+      authorize(alice_pub, function (err) {
+        if(err) throw err
+        //alice is okay, send the okay back.
+        //just send the signature. 64 bytes.
 
-          shake.write(box(okay, nonce, secret3))
-          //we are now ready!
-          //we can already cryptographically prove that alice
-          //wants to talk to us, because she signed our pubkey.
-          shake.ready(createStream(
-            hash(concat([secret3, alice_kx_pub])),
-            hash(concat([secret3, bob_kx.publicKey]))
-          ))
-        })
+        //by signing the secret, only a participant in the exchange
+        //can create a valid authentication.
+        var b_alice = shared(bob_kx.secretKey, curvify_pk(alice_pub))
+        var secret3 = hash(concat([secret2, b_alice]))
+
+        var okay = sign(concat([hello, shash]), bob.secretKey)
+
+        shake.write(box(okay, nonce, secret3))
+        //we are now ready!
+        //we can already cryptographically prove that alice
+        //wants to talk to us, because she signed our pubkey.
+        cb(null, shake.rest(), secret3, alice_pub)
       })
     })
   })
+
+  return stream
 }
 
