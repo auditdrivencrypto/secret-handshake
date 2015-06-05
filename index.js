@@ -53,9 +53,10 @@ exports.createClientStream = function (alice, bob_pub, createStream) {
 
       //32 + 64 = 96 bytes
       var hello = Buffer.concat([alice.publicKey, sig])
-      shake.write(hello)
+      shake.write(box(hello, nonce, secret))
 
-      shake.read(server_auth_length, function (err, sig) {
+      shake.read(16+server_auth_length, function (err, boxed_sig) {
+        var sig = unbox(boxed_sig, nonce, secret)
         if(!verify(sig, concat([hello, shash]), bob_pub))
           throw new Error('server not authenticated')
 
@@ -81,8 +82,8 @@ exports.createServerStream = function (bob, authorize, createStream) {
 
       var shash = hash(secret)
       shake.write(bob_kx.publicKey)
-      shake.read(client_auth_length, function (err, hello) {
-
+      shake.read(16+client_auth_length, function (err, boxed_hello) {
+        var hello = unbox(boxed_hello, nonce, secret)
         var alice_pub = hello.slice(0, 32)
         var sig = hello.slice(32, client_auth_length)
 
@@ -100,7 +101,7 @@ exports.createServerStream = function (bob, authorize, createStream) {
           //can create a valid authentication.
           var okay = sign(concat([hello, shash]), bob.secretKey)
 
-          shake.write(okay)
+          shake.write(box(okay, nonce, secret))
           //we are now ready!
           //we can already cryptographically prove that alice
           //wants to talk to us, because she signed our pubkey.
