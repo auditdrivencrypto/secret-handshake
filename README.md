@@ -5,9 +5,9 @@ A mutually authenticating key agreement handshake, with forward secure identity 
 ## Claims
 
 This protocol derives shared keys and mutually
-authenticate both ends of the connection.
-The shared keys are forward secure, and
-the identity metadata is _also forward secure_.
+authenticates both ends of the connection.
+The shared secrets are forward secure, and
+so is the identity metadata.
 
 by "forward secure identity metadata" I mean:
 
@@ -22,8 +22,6 @@ And also:
 * an unauthenticated client cannot learn server key.
   
 > note: a wrong number is just an accidental man in the middle.
-> since an unauthenticated client cannot confirm the server key
-> then cold calling / war dialing is not possible.
 
 By "confirm" I mean check a guess at the public key.
 By "learn" I mean that you can _either_ extract the public key,
@@ -38,6 +36,16 @@ know each others key. This is fair.
 
 This protocol cannot hide your ip address.
 This protocol does not attempt to obscure packet boundries.
+If a man in the middle or wrong number later compromises
+the server's key, they will be able to extract the client
+key from the client's hello packet.
+
+## Requirements
+
+The client must know the server's public key before initiating the connection.
+How that is achived is out of the scope of this protocol,
+but DHTs, blockchains, p2p gossip, certificate authorities,
+or configuration files are all possibilities.
 
 ## Pseudocode
 
@@ -94,33 +102,38 @@ box(
                 key3 = hash(key2 + shared(alice, bx))
 
                 <- box(sign([hi, hash(key)]), key3)) //64 bytes
+
+                *** rest of session encrypted with key3 ***
 -Alice-----------------------
 <- boxed2
-hi2 = unbox(boxed2, hash(key + shared(bx, alice)))
-verify(hi2.sig, [hi, hash(key)], bob.pub)
+key3 = hash(key + shared(bx, alice))
+sig = unbox(boxed2, shared3)
+verify(sig, [hi, hash(key)], bob.pub)
 
 *** (client is authed) ***
+*** rest of session encrypted with key3 ***
 ```
 
 ## Why
 
 I took the simplest, most obvious design and adjusted it until
-it became as private as possible.
+it became as private as possible. The following assumes that
+the client and server both begin by sending a challenge.
 
 ### Simplest.
 
-The simplest design would just be to send Alice's public key,
-and to sign bob's key + the key exchanges (or hash(secret))
+Alice could sign Bob's public key, the challenge,
+and send that along with her public key.
 
 This would prove the Alice's identity, and that she intended to call Bob,
 but Eve can learn the client's public key.
 
 ### Better
 
-boxing the client hello with the shared secret would mean that
-Eve could not know the client identity, but Mallory (the man in the middle) 
-would. The handshake would error - but mallory would still
-learn the client public key.
+Boxing the client hello with the shared secret would mean that
+Eve could not know the client identity, but Mallory (the man
+in the middle) would. The handshake would error - but mallory
+would still learn the client public key.
 
 ### Best
 
