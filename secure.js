@@ -13,10 +13,6 @@ module.exports = function (pub, cb) {
     var encrypt = hash(concat([secret, remote_pub]))
     var decrypt = hash(concat([secret, pub]))
 
-    console.log('EN', encrypt)
-    console.log('DE', decrypt)
-
-
     cb(null, {
       source: pull(stream.source, boxes.createUnboxStream(decrypt)),
       sink: pull(boxes.createBoxStream(encrypt), stream.sink)

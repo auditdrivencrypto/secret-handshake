@@ -2,14 +2,14 @@ var sodium = require('sodium').api
 var pull = require('pull-stream')
 
 var keypair = sodium.crypto_box_keypair
-var concat = Buffer.concat
 var shared = sodium.crypto_scalarmult
-
-var boxes = require('pull-box-stream')
-var Handshake = require('./handshake')
 var hash = sodium.crypto_hash_sha256
 var sign = sodium.crypto_sign_detached
 var verify = sodium.crypto_sign_verify_detached
+
+var Handshake = require('./handshake')
+
+var concat = Buffer.concat
 
 //this is a simple secure handshake,
 //the client public key is passed in plain text,
@@ -44,11 +44,11 @@ var curvify_sk = sodium.crypto_sign_ed25519_sk_to_curve25519
 //create the client stream with the public key you expect to connect to.
 exports.client =
 exports.createClientStream = function (alice, bob_pub, cb) {
-  var alice_kx = keypair()
   var stream = Handshake()
   var shake = stream.handshake
   delete stream.handshake
 
+  var alice_kx = keypair()
   shake.write(alice_kx.publicKey)
 
   shake.read(KEY_EX_LENGTH, function (err, bob_kx_pub) {

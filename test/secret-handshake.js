@@ -32,7 +32,6 @@ tape('test handshake', function (t) {
     }))
 
   var bobHS = shs.server(bob, function (pub, cb) {
-    console.log('AUTHORIZED?', pub, alice.publicKey)
     t.deepEqual(pub, alice.publicKey)
     cb(deepEqual(pub, alice.publicKey) ? null : new Error('unauthorized') )
   }, secure(bob.publicKey, function (err, stream) {
@@ -40,7 +39,7 @@ tape('test handshake', function (t) {
     if(err) throw err
 
     pull(stream, pull.through(function (data) {
-      console.log(data.toString())
+      console.log('echo:', data.toString())
     }), stream) //ECHO
   }))
 
