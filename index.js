@@ -34,6 +34,9 @@ var mac_length = 16
 
 var nonce = new Buffer(24); nonce.fill(0)
 
+var curvify_pk = sodium.crypto_sign_ed25519_pk_to_curve25519
+var curvify_sk = sodium.crypto_sign_ed25519_sk_to_curve25519
+
 //client is Alice
 //create the client stream with the public key you expect to connect to.
 exports.client =
@@ -49,20 +52,27 @@ exports.createClientStream = function (alice, bob_pub, createStream) {
       //this can be an encryption secret,
       //or a hmac secret.
 
+      var a_bob = shared(alice_kx.secretKey, curvify_pk(bob_pub))
+
+      var secret2 = hash(concat([secret, a_bob]))
+
       var sig = sign(concat([bob_pub, shash]), alice.secretKey)
 
       //32 + 64 = 96 bytes
       var hello = Buffer.concat([alice.publicKey, sig])
-      shake.write(box(hello, nonce, secret))
+      shake.write(box(hello, nonce, secret2))
 
       shake.read(16+server_auth_length, function (err, boxed_sig) {
-        var sig = unbox(boxed_sig, nonce, secret)
+
+        var b_alice = shared(curvify_sk(alice.secretKey), bob_kx_pub)
+        var secret3 = hash(concat([secret2, b_alice]))
+        var sig = unbox(boxed_sig, nonce, secret3)
         if(!verify(sig, concat([hello, shash]), bob_pub))
           throw new Error('server not authenticated')
 
         shake.ready(createStream(
-          hash(concat([secret, bob_kx_pub])),
-          hash(concat([secret, alice_kx.publicKey]))
+          hash(concat([secret3, bob_kx_pub])),
+          hash(concat([secret3, alice_kx.publicKey]))
         ))
       })
     })
@@ -83,7 +93,11 @@ exports.createServerStream = function (bob, authorize, createStream) {
       var shash = hash(secret)
       shake.write(bob_kx.publicKey)
       shake.read(16+client_auth_length, function (err, boxed_hello) {
-        var hello = unbox(boxed_hello, nonce, secret)
+
+        var a_bob = shared(curvify_sk(bob.secretKey), alice_kx_pub)
+        var secret2 = hash(concat([secret, a_bob]))
+
+        var hello = unbox(boxed_hello, nonce, secret2)
         var alice_pub = hello.slice(0, 32)
         var sig = hello.slice(32, client_auth_length)
 
@@ -99,15 +113,18 @@ exports.createServerStream = function (bob, authorize, createStream) {
 
           //by signing the secret, only a participant in the exchange
           //can create a valid authentication.
+          var b_alice = shared(bob_kx.secretKey, curvify_pk(alice_pub))
+          var secret3 = hash(concat([secret2, b_alice]))
+
           var okay = sign(concat([hello, shash]), bob.secretKey)
 
-          shake.write(box(okay, nonce, secret))
+          shake.write(box(okay, nonce, secret3))
           //we are now ready!
           //we can already cryptographically prove that alice
           //wants to talk to us, because she signed our pubkey.
           shake.ready(createStream(
-            hash(concat([secret, alice_kx_pub])),
-            hash(concat([secret, bob_kx.publicKey]))
+            hash(concat([secret3, alice_kx_pub])),
+            hash(concat([secret3, bob_kx.publicKey]))
           ))
         })
       })
