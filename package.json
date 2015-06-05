@@ -1,0 +1,29 @@
+{
+  "name": "secure-handshake",
+  "description": "",
+  "version": "0.0.0",
+  "homepage": "https://github.com/dominictarr/secure-handshake",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dominictarr/secure-handshake.git"
+  },
+  "dependencies": {
+    "pull-defer": "~0.1.1",
+    "pull-pushable": "~1.1.4",
+    "pull-stream": "~2.26.1",
+    "pull-pair": "~1.0.0",
+    "pull-cat": "~1.1.5",
+    "deep-equal": "~1.0.0"
+  },
+  "devDependencies": {
+    "pull-mac": "0.0.0",
+    "pull-randomly-split": "~1.0.4",
+    "tape": "~4.0.0"
+  },
+  "scripts": {
+    "prepublish": "npm ls &&  npm test",
+    "test": "set -e; for t in test/*.js; do node $t; done"
+  },
+  "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "license": "MIT"
+}
