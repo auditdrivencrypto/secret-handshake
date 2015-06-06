@@ -43,9 +43,12 @@ var curvify_pk = sodium.crypto_sign_ed25519_pk_to_curve25519
 var curvify_sk = sodium.crypto_sign_ed25519_sk_to_curve25519
 
 function createState(app_key, local, remote) {
+  var kx = keypair()
   return {
     app_key: app_key,
     local: {
+      kx_pk: kx.publicKey,
+      kx_sk: kx.secretKey,
       public: local.publicKey, secret: local.secretKey
     }, remote: {
       public: remote ? remote : null
@@ -54,9 +57,6 @@ function createState(app_key, local, remote) {
 }
 
 function createChallenge (state) {
-  var kx = keypair()
-  state.local.kx_pk = kx.publicKey
-  state.local.kx_sk = kx.secretKey
   state.local.app_mac = auth(state.local.kx_pk, state.app_key)
   return concat([state.local.app_mac, state.local.kx_pk])
 }
@@ -128,6 +128,28 @@ function verifyServerAccept (boxed_okay, state) {
   return true
 }
 
+function cleanSecrets (state) {
+
+  // clean away all the secrets for forward security.
+  // use a different secret hash(secret3) in the rest of the session,
+  // and so that a sloppy application cannot compromise the handshake.
+
+  delete state.local.secret
+  state.shash.fill(0)
+  state.secret.fill(0)
+  state.secret = hash(state.secret3)
+  state.secret2.fill(0)
+  state.secret3.fill(0)
+  state.local.kx_sk.fill(0)
+
+  delete state.shash
+  delete state.secret2
+  delete state.secret3
+  delete state.local.kx_sk
+
+  return state
+}
+
 //client is Alice
 //create the client stream with the public key you expect to connect to.
 exports.client =
@@ -145,15 +167,15 @@ exports.createClientStream = function (alice, app_key) {
     shake.read(32+KEY_EX_LENGTH, function (err, msg) {
       //create the challenge first, because we need to generate a local key
       if(!verifyChallenge(msg, state))
-        throw new Error('wrong protocol (version?)')
+        return cb(new Error('wrong protocol (version?)'))
 
       shake.write(createClientAuth(state))
 
       shake.read(16+server_auth_length, function (err, boxed_sig) {
         if(!verifyServerAccept(boxed_sig, state))
-          throw new Error('server not authenticated')
+          return cb(new Error('server not authenticated'))
 
-        cb(null, shake.rest(), state)
+        cb(null, shake.rest(), cleanSecrets(state))
       })
     })
 
@@ -173,20 +195,19 @@ exports.createServerStream = function (bob, authorize, app_key) {
     delete stream.handshake
 
     shake.read(32+KEY_EX_LENGTH, function (err, challenge) {
-      var c = createChallenge(state)
       if(!verifyChallenge(challenge, state))
-        throw new Error('wrong protocol/version')
+        return cb(new Error('wrong protocol/version'))
 
-      shake.write(c)
+      shake.write(createChallenge(state))
       shake.read(16+client_auth_length, function (err, hello) {
         if(!verifyClientAuth(hello, state))
-          throw new Error('unauthenticated client')
+          return cb(new Error('unauthenticated client'))
 
         //check if the user wants to speak to alice.
         authorize(state.remote.public, function (err) {
           if(err) throw err
           shake.write(createServerAccept(state))
-          cb(null, shake.rest(), state)
+          cb(null, shake.rest(), cleanSecrets(state))
         })
       })
     })

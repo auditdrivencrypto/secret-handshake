@@ -10,12 +10,21 @@ module.exports = function (cb) {
   return function (err, stream, state) {
     if(err) return cb(err)
 
-    var encrypt = hash(concat([state.secret3, state.remote.public]))
-    var decrypt = hash(concat([state.secret3, state.local.public]))
+    var en_key = hash(concat([state.secret, state.remote.public]))
+    var de_key = hash(concat([state.secret, state.local.public]))
+
+    var en_nonce = state.remote.app_mac.slice(0, 24)
+    var de_nonce = state.local.app_mac.slice(0, 24)
 
     cb(null, {
-      source: pull(stream.source, boxes.createUnboxStream(decrypt)),
-      sink: pull(boxes.createBoxStream(encrypt), stream.sink)
+      source: pull(
+        stream.source,
+        boxes.createUnboxStream(de_key, de_nonce)
+      ),
+      sink: pull(
+        boxes.createBoxStream(en_key, en_nonce),
+        stream.sink
+      )
     })
   }
 
