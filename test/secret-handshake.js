@@ -12,10 +12,13 @@ var bob   = sodium.crypto_sign_keypair()
 
 var secure = require('../secure')
 
+var app_key = require('crypto').randomBytes(32)
+
 tape('test handshake', function (t) {
 
-  var aliceHS = shs.client(alice, bob.publicKey,
-    secure(alice.publicKey, function (err, stream) {
+  var aliceHS =
+    shs.client(alice, app_key)
+    (bob.publicKey, secure(alice.publicKey, function (err, stream) {
 
       if(err) throw err
 
@@ -32,16 +35,21 @@ tape('test handshake', function (t) {
     }))
 
   var bobHS = shs.server(bob, function (pub, cb) {
-    t.deepEqual(pub, alice.publicKey)
-    cb(deepEqual(pub, alice.publicKey) ? null : new Error('unauthorized') )
-  }, secure(bob.publicKey, function (err, stream) {
+      t.deepEqual(pub, alice.publicKey)
 
-    if(err) throw err
+      if(deepEqual(pub, alice.publicKey)) cb(null)
+      else
+        cb(new Error('unauthorized'))
 
-    pull(stream, pull.through(function (data) {
-      console.log('echo:', data.toString())
-    }), stream) //ECHO
-  }))
+    }, app_key)
+    (secure(bob.publicKey, function (err, stream) {
+
+      if(err) throw err
+
+      pull(stream, pull.through(function (data) {
+        console.log('echo:', data.toString())
+      }), stream) //ECHO
+    }))
 
   pull(
     aliceHS,
