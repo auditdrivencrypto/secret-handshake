@@ -66,7 +66,7 @@ exports.createClientStream = function (alice, app_key) {
 
     var alice_kx = keypair()
     shake.write(authbox(alice_kx.publicKey, app_key))
-    console.log('app_key', app_key)
+
     shake.read(32+KEY_EX_LENGTH, function (err, challenge) {
       var bob_kx_pub = authunbox(challenge, app_key)
       if(!bob_kx_pub)
@@ -85,7 +85,7 @@ exports.createClientStream = function (alice, app_key) {
       var sig = sign(concat([bob_pub, shash]), alice.secretKey)
 
       //32 + 64 = 96 bytes
-      var hello = Buffer.concat([alice.publicKey, sig])
+      var hello = Buffer.concat([sig, alice.publicKey])
       shake.write(box(hello, nonce, secret2))
 
       shake.read(16+server_auth_length, function (err, boxed_sig) {
@@ -134,8 +134,8 @@ exports.createServerStream = function (bob, authorize, app_key) {
         var secret2 = hash(concat([secret, a_bob]))
 
         var hello = unbox(boxed_hello, nonce, secret2)
-        var alice_pub = hello.slice(0, 32)
-        var sig = hello.slice(32, client_auth_length)
+        var sig = hello.slice(0, 64)
+        var alice_pub = hello.slice(64, client_auth_length)
 
         if(!verify(sig, concat([bob.publicKey, shash]), alice_pub))
           throw new Error('server hang up - wrong number')
