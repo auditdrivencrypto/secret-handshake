@@ -158,7 +158,7 @@ Here is my reasoning on why I did not implement this.
 In [curvecp](http://curvecp.org/packets.html) the first packet
 is encrypted to Bob's long term key. This means that packet
 can be replayed, and if Bob responds then that implies he is still
-using that key. This is a privace leak because it would  confirm
+using that key. This is a privacy leak because it would  confirm
 that Bob has moved address.
 
 ### Don't authenticate with a shared key derived from 2 long term keys.
