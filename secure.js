@@ -5,13 +5,13 @@ var boxes = require('pull-box-stream')
 
 var concat = Buffer.concat
 
-module.exports = function (pub, cb) {
+module.exports = function (cb) {
 
-  return function (err, stream, secret, remote_pub) {
+  return function (err, stream, state) {
     if(err) return cb(err)
 
-    var encrypt = hash(concat([secret, remote_pub]))
-    var decrypt = hash(concat([secret, pub]))
+    var encrypt = hash(concat([state.secret3, state.remote.public]))
+    var decrypt = hash(concat([state.secret3, state.local.public]))
 
     cb(null, {
       source: pull(stream.source, boxes.createUnboxStream(decrypt)),
