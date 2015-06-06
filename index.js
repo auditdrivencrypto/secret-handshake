@@ -68,6 +68,7 @@ function verifyChallenge (challenge, state) {
     return null
 
   state.remote.kx_pk = remote_pk
+  state.remote.app_mac = mac
   state.secret = shared(state.local.kx_sk, state.remote.kx_pk)
   state.shash = hash(state.secret)
 
