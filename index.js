@@ -30,18 +30,6 @@ function unbox (ciphermsg, nonce, key) {
   )
 }
 
-function authbox (msg, key) {
-  return concat([auth(msg, key), msg])
-}
-
-function authunbox (authbox, key) {
-  var mac = authbox.slice(0, 32)
-  var content = authbox.slice(32, authbox.length)
-  if(0===verify_auth(mac, content, key))
-    return content
-  return null
-}
-
 var KEY_EX_LENGTH = keypair().publicKey.length
 
 var challenge_length = 32
@@ -54,49 +42,117 @@ var nonce = new Buffer(24); nonce.fill(0)
 var curvify_pk = sodium.crypto_sign_ed25519_pk_to_curve25519
 var curvify_sk = sodium.crypto_sign_ed25519_sk_to_curve25519
 
+function createState(app_key, local, remote) {
+  return {
+    app_key: app_key,
+    local: {
+      public: local.publicKey, secret: local.secretKey
+    }, remote: {
+      public: remote ? remote : null
+    }
+  }
+}
+
+function createChallenge (state) {
+  var kx = keypair()
+  state.local.kx_pk = kx.publicKey
+  state.local.kx_sk = kx.secretKey
+  state.local.app_mac = auth(state.local.kx_pk, state.app_key)
+  return concat([state.local.app_mac, state.local.kx_pk])
+}
+
+function verifyChallenge (challenge, state) {
+  var mac = challenge.slice(0, 32)
+  var remote_pk = challenge.slice(32, challenge.length)
+  if(0 !== verify_auth(mac, remote_pk, state.app_key))
+    return null
+
+  state.remote.kx_pk = remote_pk
+  state.secret = shared(state.local.kx_sk, state.remote.kx_pk)
+  state.shash = hash(state.secret)
+
+  return true
+}
+
+function createClientAuth (state) {
+  //now we have agreed on the secret.
+  //this can be an encryption secret,
+  //or a hmac secret.
+
+  // shared(local.kx, remote.public)
+  var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+  state.secret2 = hash(concat([state.secret, a_bob]))
+
+  var sig = sign(concat([state.remote.public, state.shash]), state.local.secret)
+
+  state.local.hello = Buffer.concat([sig, state.local.public])
+  return box(state.local.hello, nonce, state.secret2)
+}
+
+function verifyClientAuth (data, state) {
+  var a_bob = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+  state.secret2 = hash(concat([state.secret, a_bob]))
+
+  state.remote.hello = unbox(data, nonce, state.secret2)
+
+  var sig = state.remote.hello.slice(0, 64)
+  var public = state.remote.hello.slice(64, client_auth_length)
+
+  if(!verify(sig, concat([state.local.public, state.shash]), public))
+    return null
+
+  state.remote.public = public
+
+  return true
+}
+
+function createServerAccept (state) {
+  //shared key between my local ephemeral key + remote public
+  var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+  state.secret3 = hash(concat([state.secret2, b_alice]))
+
+  var shash = state.shash
+
+  var okay = sign(concat([state.remote.hello, shash]), state.local.secret)
+  return box(okay, nonce, state.secret3)
+}
+
+function verifyServerAccept (boxed_okay, state) {
+  var b_alice = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+  state.secret3 = hash(concat([state.secret2, b_alice]))
+
+  var sig = unbox(boxed_okay, nonce, state.secret3)
+  if(!verify(sig, concat([state.local.hello, state.shash]), state.remote.public))
+      return null
+  return true
+}
+
 //client is Alice
 //create the client stream with the public key you expect to connect to.
 exports.client =
 exports.createClientStream = function (alice, app_key) {
 
   return function (bob_pub, cb) {
+    var state = createState(app_key, alice, bob_pub)
+
     var stream = Handshake()
     var shake = stream.handshake
     delete stream.handshake
 
-    var alice_kx = keypair()
-    shake.write(authbox(alice_kx.publicKey, app_key))
+    shake.write(createChallenge(state))
 
-    shake.read(32+KEY_EX_LENGTH, function (err, challenge) {
-      var bob_kx_pub = authunbox(challenge, app_key)
-      if(!bob_kx_pub)
+    shake.read(32+KEY_EX_LENGTH, function (err, msg) {
+      //create the challenge first, because we need to generate a local key
+      if(!verifyChallenge(msg, state))
         throw new Error('wrong protocol (version?)')
 
-      var secret = shared(alice_kx.secretKey, bob_kx_pub)
-      var shash = hash(secret)
-      //now we have agreed on the secret.
-      //this can be an encryption secret,
-      //or a hmac secret.
-
-      var a_bob = shared(alice_kx.secretKey, curvify_pk(bob_pub))
-
-      var secret2 = hash(concat([secret, a_bob]))
-
-      var sig = sign(concat([bob_pub, shash]), alice.secretKey)
-
-      //32 + 64 = 96 bytes
-      var hello = Buffer.concat([sig, alice.publicKey])
-      shake.write(box(hello, nonce, secret2))
+      shake.write(createClientAuth(state))
 
       shake.read(16+server_auth_length, function (err, boxed_sig) {
-
-        var b_alice = shared(curvify_sk(alice.secretKey), bob_kx_pub)
-        var secret3 = hash(concat([secret2, b_alice]))
-        var sig = unbox(boxed_sig, nonce, secret3)
-        if(!verify(sig, concat([hello, shash]), bob_pub))
+        if(!verifyServerAccept(boxed_sig, state))
           throw new Error('server not authenticated')
 
-        cb(null, shake.rest(), secret3, bob_pub)
+        cb(null, shake.rest(), state)
       })
     })
 
@@ -104,64 +160,35 @@ exports.createClientStream = function (alice, app_key) {
   }
 }
 
-
 //server is Bob.
 exports.server =
 exports.createServerStream = function (bob, authorize, app_key) {
 
   return function (cb) {
-
+    var state = createState(app_key, bob)
     var stream = Handshake()
 
     var shake = stream.handshake
     delete stream.handshake
 
     shake.read(32+KEY_EX_LENGTH, function (err, challenge) {
-      console.log(challenge, app_key)
-      var alice_kx_pub = authunbox(challenge, app_key)
-      console.log(alice_kx_pub)
-      if(!alice_kx_pub)
+      var c = createChallenge(state)
+      if(!verifyChallenge(challenge, state))
         throw new Error('wrong protocol/version')
-      //ephemeral key exchange
-      var bob_kx = keypair()
-      var secret = shared(bob_kx.secretKey, alice_kx_pub)
 
-      var shash = hash(secret)
-      shake.write(authbox(bob_kx.publicKey, app_key))
-      shake.read(16+client_auth_length, function (err, boxed_hello) {
-
-        var a_bob = shared(curvify_sk(bob.secretKey), alice_kx_pub)
-        var secret2 = hash(concat([secret, a_bob]))
-
-        var hello = unbox(boxed_hello, nonce, secret2)
-        var sig = hello.slice(0, 64)
-        var alice_pub = hello.slice(64, client_auth_length)
-
-        if(!verify(sig, concat([bob.publicKey, shash]), alice_pub))
-          throw new Error('server hang up - wrong number')
+      shake.write(c)
+      shake.read(16+client_auth_length, function (err, hello) {
+        if(!verifyClientAuth(hello, state))
+          throw new Error('unauthenticated client')
 
         //check if the user wants to speak to alice.
-        authorize(alice_pub, function (err) {
+        authorize(state.remote.public, function (err) {
           if(err) throw err
-          //alice is okay, send the okay back.
-          //just send the signature. 64 bytes.
-
-          //by signing the secret, only a participant in the exchange
-          //can create a valid authentication.
-          var b_alice = shared(bob_kx.secretKey, curvify_pk(alice_pub))
-          var secret3 = hash(concat([secret2, b_alice]))
-
-          var okay = sign(concat([hello, shash]), bob.secretKey)
-
-          shake.write(box(okay, nonce, secret3))
-          //we are now ready!
-          //we can already cryptographically prove that alice
-          //wants to talk to us, because she signed our pubkey.
-          cb(null, shake.rest(), secret3, alice_pub)
+          shake.write(createServerAccept(state))
+          cb(null, shake.rest(), state)
         })
       })
     })
-
     return stream
   }
 }
