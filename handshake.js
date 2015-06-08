@@ -6,10 +6,12 @@ var Writer = require('pull-pushable')
 var cat = require('pull-cat')
 var pair = require('pull-pair')
 
-module.exports = function () {
+module.exports = function (_cb) {
 
   var reader = Reader()
-  var writer = Writer()
+  var writer = Writer(function (err) {
+    if(err) _cb(err)
+  })
 
   var source = deferred.source()
 
@@ -18,6 +20,11 @@ module.exports = function () {
   return {
     handshake: {
       read: reader.read,
+      abort: function (err) {
+        reader.abort(err, function (err) {
+        })
+        _cb(err)
+      },
       write: writer.push,
       rest: function () {
         writer.end()
