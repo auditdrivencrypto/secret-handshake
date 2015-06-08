@@ -18,7 +18,8 @@
   "devDependencies": {
     "pull-mac": "0.0.0",
     "pull-randomly-split": "~1.0.4",
-    "tape": "~4.0.0"
+    "tape": "~4.0.0",
+    "pull-bitflipper": "~0.1.0"
   },
   "scripts": {
     "prepublish": "npm ls &&  npm test",
