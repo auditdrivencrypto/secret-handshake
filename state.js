@@ -95,7 +95,8 @@ function createClientAuth () {
   var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.public))
   state.secret2 = hash(concat([state.secret, a_bob]))
 
-  var sig = sign(concat([state.remote.public, state.shash]), state.local.secret)
+  var signed = concat([state.app_key, state.remote.public, state.shash])
+  var sig = sign(signed, state.local.secret)
 
   state.local.hello = Buffer.concat([sig, state.local.public])
   return box(state.local.hello, nonce, state.secret2)
@@ -109,11 +110,14 @@ function verifyClientAuth (data) {
   state.secret2 = hash(concat([state.secret, a_bob]))
 
   state.remote.hello = unbox(data, nonce, state.secret2)
+  if(!state.remote.hello)
+    return null
 
   var sig = state.remote.hello.slice(0, 64)
   var public = state.remote.hello.slice(64, client_auth_length)
 
-  if(!verify(sig, concat([state.local.public, state.shash]), public))
+  var signed = concat([state.app_key, state.local.public, state.shash])
+  if(!verify(sig, signed, public))
     return null
 
   state.remote.public = public
@@ -129,9 +133,8 @@ function createServerAccept () {
   var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
   state.secret3 = hash(concat([state.secret2, b_alice]))
 
-  var shash = state.shash
-
-  var okay = sign(concat([state.remote.hello, shash]), state.local.secret)
+  var signed = concat([state.app_key, state.remote.hello, state.shash])
+  var okay = sign(signed, state.local.secret)
   return box(okay, nonce, state.secret3)
 }
 
@@ -143,7 +146,9 @@ function verifyServerAccept (boxed_okay) {
   state.secret3 = hash(concat([state.secret2, b_alice]))
 
   var sig = unbox(boxed_okay, nonce, state.secret3)
-  if(!verify(sig, concat([state.local.hello, state.shash]), state.remote.public))
+  if(!sig) return null
+  var signed = concat([state.app_key, state.local.hello, state.shash])
+  if(!verify(sig, signed, state.remote.public))
       return null
   return true
 }
