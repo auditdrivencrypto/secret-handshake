@@ -10,6 +10,7 @@ var bitflipper = require('pull-bitflipper')
 
 var alice = sodium.crypto_sign_keypair()
 var bob   = sodium.crypto_sign_keypair()
+var wally = sodium.crypto_sign_keypair()
 
 var secure = require('../secure')
 
@@ -132,4 +133,40 @@ tape('test auth fails when 4th packet is flipped', function (t) {
   })
 })
 
+
+tape('test error cb when client is not authorized', function (t) {
+  var errs = 0
+  var aliceHS = shs.client(alice, app_key)
+    (bob.publicKey, function (err) {
+      t.ok(err, 'Bob hungup')
+      if(++errs === 2) t.end()
+    })
+
+  var bobHS = shs.server(bob, function (public, cb) {
+      cb(new Error('unauthorized'))
+    }, app_key) (function (err) {
+      t.ok(err, 'client unauthorized')
+      if(++errs === 2) t.end()
+    })
+
+  pull(aliceHS, bobHS, aliceHS)
+})
+
+tape('test error cb when client get wrong number', function (t) {
+  var errs = 0
+  var aliceHS = shs.client(alice, app_key)
+    (wally.publicKey, function (err) {
+      t.ok(err, 'Bob hungup')
+      if(++errs === 2) t.end()
+    })
+
+  var bobHS = shs.server(bob, function (public, cb) {
+      cb(new Error('unauthorized'))
+    }, app_key) (function (err) {
+      t.ok(err, 'client unauthorized')
+      if(++errs === 2) t.end()
+    })
+
+  pull(aliceHS, bobHS, aliceHS)
+})
 
