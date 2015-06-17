@@ -13,7 +13,8 @@
     "pull-stream": "~2.26.1",
     "pull-pair": "~1.0.0",
     "pull-cat": "~1.1.5",
-    "deep-equal": "~1.0.0"
+    "deep-equal": "~1.0.0",
+    "pull-handshake": "~1.0.0"
   },
   "devDependencies": {
     "pull-mac": "0.0.0",
