@@ -20,7 +20,6 @@ var client_auth_length = 16+32+64
 var server_auth_length = 16+64
 var mac_length = 16
 
-
 //this is a simple secure handshake,
 //the client public key is passed in plain text,
 
@@ -93,7 +92,8 @@ function createClientAuth () {
 
   // shared(local.kx, remote.public)
   var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.public))
-  state.secret2 = hash(concat([state.secret, a_bob]))
+  state.a_bob = a_bob
+  state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
 
   var signed = concat([state.app_key, state.remote.public, state.shash])
   var sig = sign(signed, state.local.secret)
@@ -107,7 +107,8 @@ function verifyClientAuth (data) {
   var state = this
 
   var a_bob = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
-  state.secret2 = hash(concat([state.secret, a_bob]))
+  state.a_bob = a_bob
+  state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
 
   state.remote.hello = unbox(data, nonce, state.secret2)
   if(!state.remote.hello)
@@ -131,7 +132,8 @@ function createServerAccept () {
 
   //shared key between my local ephemeral key + remote public
   var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
-  state.secret3 = hash(concat([state.secret2, b_alice]))
+  state.b_alice = b_alice
+  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
 
   var signed = concat([state.app_key, state.remote.hello, state.shash])
   var okay = sign(signed, state.local.secret)
@@ -143,7 +145,9 @@ function verifyServerAccept (boxed_okay) {
   var state = this
 
   var b_alice = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
-  state.secret3 = hash(concat([state.secret2, b_alice]))
+  state.b_alice = b_alice
+//  state.secret3 = hash(concat([state.secret2, b_alice]))
+  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
 
   var sig = unbox(boxed_okay, nonce, state.secret3)
   if(!sig) return null
@@ -164,6 +168,8 @@ function cleanSecrets () {
   delete state.local.secret
   state.shash.fill(0)
   state.secret.fill(0)
+  state.a_bob.fill(0)
+  state.b_alice.fill(0)
   state.secret = hash(state.secret3)
   state.secret2.fill(0)
   state.secret3.fill(0)
@@ -172,6 +178,8 @@ function cleanSecrets () {
   delete state.shash
   delete state.secret2
   delete state.secret3
+  delete state.a_bob
+  delete state.b_alice
   delete state.local.kx_sk
 
   return state
