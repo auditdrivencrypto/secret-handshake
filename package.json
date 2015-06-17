@@ -1,11 +1,11 @@
 {
-  "name": "secure-handshake",
+  "name": "secret-handshake",
   "description": "",
   "version": "0.0.1",
-  "homepage": "https://github.com/dominictarr/secure-handshake",
+  "homepage": "https://github.com/dominictarr/secret-handshake",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/secure-handshake.git"
+    "url": "git://github.com/dominictarr/secret-handshake.git"
   },
   "dependencies": {
     "deep-equal": "~1.0.0",
