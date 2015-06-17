@@ -8,19 +8,22 @@
     "url": "git://github.com/dominictarr/secure-handshake.git"
   },
   "dependencies": {
+    "deep-equal": "~1.0.0",
+    "pull-box-stream": "^1.0.2",
+    "pull-cat": "~1.1.5",
     "pull-defer": "~0.1.1",
+    "pull-handshake": "~1.0.1",
+    "pull-pair": "~1.0.0",
     "pull-pushable": "~1.1.4",
     "pull-stream": "~2.26.1",
-    "pull-pair": "~1.0.0",
-    "pull-cat": "~1.1.5",
-    "deep-equal": "~1.0.0",
-    "pull-handshake": "~1.0.0"
+    "sodium": "^1.0.19"
   },
   "devDependencies": {
     "pull-mac": "0.0.0",
     "pull-randomly-split": "~1.0.4",
     "tape": "~4.0.0",
-    "pull-bitflipper": "~0.1.0"
+    "pull-bitflipper": "~0.1.0",
+    "stream-to-pull-stream": "~1.6.1"
   },
   "scripts": {
     "prepublish": "npm ls &&  npm test",
