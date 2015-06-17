@@ -17,6 +17,7 @@ module.exports = function (cb) {
     var de_nonce = state.local.app_mac.slice(0, 24)
 
     cb(null, {
+      remote: state.remote.public,
       source: pull(
         stream.source,
         boxes.createUnboxStream(de_key, de_nonce)
