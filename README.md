@@ -5,6 +5,9 @@ secure-channel based on a a mutually authenticating key agreement handshake, wit
 For a full explaination of the design, read the
 [Design Paper](http://dominictarr.github.io/secret-handshake-paper/shs.pdf)
 
+This protocol is very new and likely to change as I receive
+feedback about the design. _consider yourself warned!_
+
 ## Claims
 
 This protocol derives shared keys and mutually
@@ -43,12 +46,6 @@ If a man in the middle or wrong number later compromises
 the server's key, they will be able to extract the client
 key from the client's hello packet.
 
-## Example
-
-``` js
-
-
-```
 
 ## License
 
