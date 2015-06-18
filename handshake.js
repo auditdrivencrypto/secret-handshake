@@ -84,8 +84,9 @@ exports.createServerStream = function (bob, authorize, app_key) {
             return abort(null, 'wrong number', cb)
         }
         //check if the user wants to speak to alice.
-        authorize(state.remote.public, function (err) {
-          if(err) return abort(err, 'client authentication rejected', cb)
+        authorize(state.remote.public, function (err, auth) {
+          if(err || !auth) return abort(err, 'client authentication rejected', cb)
+          state.auth = auth
           shake.write(state.createServerAccept())
           cb(null, shake.rest(), state.cleanSecrets())
         })

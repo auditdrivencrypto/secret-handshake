@@ -18,6 +18,9 @@ module.exports = function (cb) {
 
     cb(null, {
       remote: state.remote.public,
+      //on the server, attach any metadata gathered
+      //during `authorize` call
+      auth: state.auth,
       source: pull(
         stream.source,
         boxes.createUnboxStream(de_key, de_nonce)
