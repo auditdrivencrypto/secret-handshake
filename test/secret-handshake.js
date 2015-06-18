@@ -35,10 +35,11 @@ tape('test handshake', function (t) {
 
     })
 
+  var r = Math.random()
   var bobHS = shs.server(bob, function (public, cb) {
       t.deepEqual(public, alice.publicKey)
 
-      if(deepEqual(public, alice.publicKey)) cb(null)
+      if(deepEqual(public, alice.publicKey)) cb(null, {okay: true, random: r})
       else
         cb(new Error('unauthorized'))
 
@@ -47,6 +48,7 @@ tape('test handshake', function (t) {
 
       if(err) throw err
 
+      t.deepEqual(stream.auth, {okay: true, random: r})
       pull(stream, pull.through(function (data) {
         console.log('echo:', data.toString())
       }), stream) //ECHO
