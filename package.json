@@ -12,7 +12,7 @@
     "pull-box-stream": "^1.0.2",
     "pull-cat": "~1.1.5",
     "pull-defer": "~0.1.1",
-    "pull-handshake": "~1.0.1",
+    "pull-handshake": "^1.0.2",
     "pull-pair": "~1.0.0",
     "pull-pushable": "~1.1.4",
     "pull-stream": "~2.26.1",
