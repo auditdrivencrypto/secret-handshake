@@ -169,3 +169,38 @@ tape('test error cb when client get wrong number', function (t) {
   pull(aliceHS, bobHS, aliceHS)
 })
 
+
+tape('error if created without public key', function (t) {
+
+  var aliceHS = shs.client(alice, app_key)
+  t.throws(function () {
+    aliceHS()
+  })
+  t.end()
+})
+
+tape('unauthorized connection must cb once', function (t) {
+  t.plan(2)
+  var n = 2
+  var aliceHS = shs.client(alice, app_key)
+  var bobHS = shs.server(bob, function (_, cb) { cb() }, app_key)
+
+  var as = aliceHS(bob.publicKey, function (err, stream) {
+    console.log('Alice')
+    t.ok(err, 'client connect should fail')
+    next()
+  })
+
+  pull(as, bobHS(function (err, stream) {
+    console.log('Bob')
+    t.ok(err, 'server connect should fail')
+    next()
+  }), as)
+
+  function next () {
+    if(--n) return
+    t.end()
+  }
+
+
+})
