@@ -1,6 +1,6 @@
 {
   "name": "secret-handshake",
-  "description": "",
+  "description": "a simple and highly private secure-channel protocol",
   "version": "0.1.1",
   "homepage": "https://github.com/dominictarr/secret-handshake",
   "repository": {
