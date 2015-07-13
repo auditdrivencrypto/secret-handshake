@@ -43,6 +43,54 @@ If a man in the middle or wrong number later compromises
 the server's key, they will be able to extract the client
 key from the client's hello packet.
 
+## Example
+
+The simplest way to use secret-handshake is to use
+`require('secret-handshake/net')`, a wrapper around net.
+This makes it easy to create encrypted tcp connections.
+
+[pull-streams](https://github.com/dominictarr/pull-streams) are used.
+learn about how pull-streams from [these examples](https://github.com/dominictarr/pull-stream-examples)
+
+[sodium](https://github.com/paixaop/node-sodium) is required to generate
+key pairs.
+
+``` js
+var createNode = require('secret-handshake/net')
+var sodium = require('sodium').api
+var appKey = ... //32 random bytes
+var aliceKey = sodium.crypto_sign_keypair() //client
+var bobKey = sodium.crypto_sign_keypair()   //server
+
+var alice = createNode({
+  keys: aliceKey,
+  appKey: appKey
+})
+
+var bob = createNode({
+  keys: bobKey,
+  appKey: appKey,
+  //the authenticate function is required to receive calls.
+  authenticate: function (pub, cb) {
+    //decide whether to allow access to pub.
+    if(yes) cb(null, truthy)
+    else    cb(new Error('reason'))
+    //The client WILL NOT see the unauthentication reason
+  }
+})
+
+//now, create a server (bob) and connect a client (alice)
+
+bob.createServer(function (stream) {
+  pull(source, stream, sink)
+}).listen(8978, function () {
+  var stream =
+    alice.connect({port: 8979, host: 'localhost', keys: bob.publicKey})
+
+  pull(source, stream, sink)
+})
+
+```
 
 ## License
 
