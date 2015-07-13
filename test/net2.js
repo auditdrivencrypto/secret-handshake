@@ -28,10 +28,10 @@ var aliceN = netshs({
   //alice doesn't need authenticate
   //because she is the client.
 })
+var PORT = 45034
 
-tape('test with net', function (t) {
+tape('test net.js, correct, callback', function (t) {
 
-  var PORT = 45034
 
   var server = bobN.createServer(function (stream) {
     t.deepEqual(stream.remote, alice.publicKey)
@@ -59,19 +59,38 @@ tape('test with net', function (t) {
 
 })
 
-tape('test with net', function (t) {
-
-  var bobN = netshs({
-    keys: bob,
-    appKey: app_key,
-    authenticate: function (pub, cb) {
-      cb() //reject, with no reason
-    }
-  })
-
-  var PORT = 45035
+tape('test net.js, correct, stream directly', function (t) {
 
   var server = bobN.createServer(function (stream) {
+    t.deepEqual(stream.remote, alice.publicKey)
+    pull(stream, pull.through(console.log), stream) //echo
+  }).listen(PORT, function () {
+    pull(
+      pull.values([new Buffer('HELLO')]),
+      aliceN.connect({port: PORT, key: bob.publicKey}),
+      pull.collect(function (err, data) {
+        if(err) throw err
+        t.notOk(err)
+        t.deepEqual(Buffer.concat(data), new Buffer('HELLO'))
+        server.close()
+        t.end()
+      })
+    )
+  })
+
+})
+
+var bobN2 = netshs({
+  keys: bob,
+  appKey: app_key,
+  authenticate: function (pub, cb) {
+    cb() //reject, with no reason
+  }
+})
+
+tape('test net, error, callback', function (t) {
+
+  var server = bobN2.createServer(function (stream) {
     throw new Error('this should never be called')
   }).listen(PORT, function () {
 
@@ -85,6 +104,28 @@ tape('test with net', function (t) {
         t.end()
         server.close()
     })
+  })
+
+})
+
+
+tape('test net, error, stream', function (t) {
+
+  var server = bobN2.createServer(function (stream) {
+    throw new Error('this should never be called')
+  }).listen(PORT, function () {
+
+    pull(
+      aliceN.connect({
+        port: PORT,
+        key: bob.publicKey
+      }),
+      pull.collect(function (err, ary) {
+          t.ok(err)
+          t.end()
+          server.close()
+      })
+    )
   })
 
 })
