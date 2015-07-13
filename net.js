@@ -4,6 +4,7 @@ var toPull = require('stream-to-pull-stream')
 var shs = require('./')
 var isBuffer = Buffer.isBuffer
 var pull = require('pull-stream')
+var Defer = require('pull-defer/duplex')
 
 function assertOpts (opts) {
   if(!(opts && 'object' === typeof opts))
@@ -61,11 +62,33 @@ module.exports = function createNode (opts) {
       assertAddr(addr)
       var stream = toPull.duplex(net.connect(addr.port, addr.host))
 
-      pull(
-        stream,
-        create(addr.key, cb),
-        stream
-      )
+      if(cb) {
+        pull(
+          stream,
+          create(addr.key, cb),
+          stream
+        )
+      }
+      else {
+
+        var defer = Defer()
+
+        pull(
+          stream,
+          create(addr.key, function (err, stream) {
+            if(err)
+              defer.resolve({
+                source: function (abort, cb) { cb(err) },
+                sink: function (read) { read(err, function (){}) }
+              })
+            else defer.resolve(stream)
+          }),
+          stream
+        )
+
+        return defer
+
+      }
     }
   }
 }
