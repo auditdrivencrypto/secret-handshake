@@ -10,7 +10,8 @@ var sodium = require('sodium/build/Release/sodium')
 var alice = sodium.crypto_sign_keypair()
 var bob = sodium.crypto_sign_keypair()
 
-var app_key = require('crypto').randomBytes(32)
+var crypto = require('crypto')
+var app_key = crypto.randomBytes(32)
 
 var shs = require('../')
 
@@ -130,3 +131,27 @@ tape('test net, error, stream', function (t) {
 
 })
 
+tape('test net, create seed cap', function (t) {
+
+  var seed = crypto.randomBytes(32)
+  var keys = sodium.crypto_sign_seed_keypair(seed)
+
+  var seedN = netshs({
+    seed: seed,
+    appKey: app_key,
+    //alice doesn't need authenticate
+    //because she is the client.
+  })
+
+  var server = bobN.createServer(function (stream) {
+    t.deepEqual(stream.remote, keys.publicKey)
+    stream.source(true, function () {})
+    server.close()
+    t.end()
+  }).listen(PORT, function () {
+
+    seedN.connect({port: PORT, key: bob.publicKey})
+
+  })
+
+})
