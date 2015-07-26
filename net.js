@@ -1,4 +1,5 @@
 
+var sodium = require('sodium/build/Release/sodium')
 var net = require('net')
 var toPull = require('stream-to-pull-stream')
 var shs = require('./')
@@ -33,18 +34,23 @@ function assertAddr (addr) {
 }
 
 module.exports = function createNode (opts) {
+  var keys =
+    isBuffer(opts.seed)
+    ? sodium.crypto_sign_seed_keypair(opts.seed)
+    : opts.keys
 
-  assertOpts(opts); assertKeys(opts); assertAppKey(opts)
+  assertOpts(opts); assertKeys({keys: keys}); assertAppKey(opts)
 
-  var create = shs.createClient(opts.keys, opts.appKey)
+  var create = shs.createClient(keys, opts.appKey)
 
   return {
+    publicKey: keys.publicKey,
     createServer: function (onConnect) {
       if('function' !== typeof opts.authenticate)
         throw new Error('function opts.authenticate(pub, cb)'
           + '*must* be provided in order to receive connections')
       var createServerStream =
-        shs.createServer(opts.keys, opts.authenticate, opts.appKey)
+        shs.createServer(keys, opts.authenticate, opts.appKey)
       var server
       return server = net.createServer(function (stream) {
         stream = toPull.duplex(stream)
