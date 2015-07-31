@@ -16,7 +16,8 @@
     "pull-pair": "~1.0.0",
     "pull-pushable": "~1.1.4",
     "pull-stream": "~2.26.1",
-    "sodium": "git://github.com/dominictarr/node-sodium.git#0fade334a8c67b6267a5e66f944199b74927713a"
+    "sodium": "git://github.com/dominictarr/node-sodium.git#0fade334a8c67b6267a5e66f944199b74927713a",
+    "stream-to-pull-stream": "^1.6.2"
   },
   "devDependencies": {
     "pull-mac": "0.0.0",
