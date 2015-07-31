@@ -4,7 +4,7 @@ var shs = require('../')
 var tape = require('tape')
 var pull = require('pull-stream')
 
-var sodium = require('sodium').api
+var sodium = require('chloride').api
 var deepEqual = require('deep-equal')
 var bitflipper = require('pull-bitflipper')
 

@@ -1,4 +1,3 @@
-var sodium = require('sodium').api
 var pull = require('pull-stream')
 
 var Handshake = require('pull-handshake')

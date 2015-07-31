@@ -1,5 +1,5 @@
 
-var sodium      = require('sodium/build/Release/sodium')
+var sodium      = require('chloride/build/Release/sodium')
 
 var keypair     = sodium.crypto_box_keypair
 var shared      = sodium.crypto_scalarmult

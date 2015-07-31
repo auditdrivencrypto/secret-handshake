@@ -5,7 +5,7 @@ var netshs = require('../net')
 var pull = require('pull-stream')
 var tape = require('tape')
 
-var sodium = require('sodium/build/Release/sodium')
+var sodium = require('chloride/build/Release/sodium')
 
 var alice = sodium.crypto_sign_keypair()
 var bob = sodium.crypto_sign_keypair()
