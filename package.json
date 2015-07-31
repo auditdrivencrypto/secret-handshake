@@ -20,7 +20,6 @@
     "stream-to-pull-stream": "^1.6.2"
   },
   "devDependencies": {
-    "pull-mac": "0.0.0",
     "pull-randomly-split": "~1.0.4",
     "tape": "~4.0.0",
     "pull-bitflipper": "~0.1.0",
