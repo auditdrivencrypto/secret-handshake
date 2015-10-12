@@ -10,7 +10,7 @@
   "dependencies": {
     "chloride": "^1.0.22",
     "deep-equal": "~1.0.0",
-    "pull-box-stream": "^1.0.6",
+    "pull-box-stream": "^1.0.8",
     "pull-cat": "~1.1.5",
     "pull-defer": "~0.2.0",
     "pull-handshake": "^1.0.2",
