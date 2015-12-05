@@ -8,9 +8,9 @@
     "url": "git://github.com/dominictarr/secret-handshake.git"
   },
   "dependencies": {
-    "chloride": "^1.0.22",
+    "chloride": "^2.0.1",
     "deep-equal": "~1.0.0",
-    "pull-box-stream": "^1.0.8",
+    "pull-box-stream": "^1.0.9",
     "pull-cat": "~1.1.5",
     "pull-defer": "~0.2.0",
     "pull-handshake": "^1.0.2",

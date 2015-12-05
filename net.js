@@ -1,5 +1,5 @@
 
-var sodium = require('chloride/build/Release/sodium')
+var sodium = require('chloride')
 var net = require('net')
 var toPull = require('stream-to-pull-stream')
 var shs = require('./')

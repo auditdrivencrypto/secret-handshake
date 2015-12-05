@@ -1,5 +1,5 @@
 
-var sodium      = require('chloride/build/Release/sodium')
+var sodium      = require('chloride')
 
 var keypair     = sodium.crypto_box_keypair
 var shared      = sodium.crypto_scalarmult
@@ -10,6 +10,8 @@ var auth        = sodium.crypto_auth
 var verify_auth = sodium.crypto_auth_verify
 var curvify_pk  = sodium.crypto_sign_ed25519_pk_to_curve25519
 var curvify_sk  = sodium.crypto_sign_ed25519_sk_to_curve25519
+var box         = sodium.crypto_secretbox_easy
+var unbox       = sodium.crypto_secretbox_open_easy
 
 var concat = Buffer.concat
 
@@ -22,20 +24,6 @@ var mac_length = 16
 
 //this is a simple secure handshake,
 //the client public key is passed in plain text,
-
-function box (msg, nonce, key) {
-  var b = sodium.crypto_secretbox(msg, nonce, key)
-  return b.slice(16, b.length)
-}
-
-var zeros = new Buffer(16); zeros.fill(0)
-
-function unbox (ciphermsg, nonce, key) {
-  return sodium.crypto_secretbox_open(
-    concat([zeros, ciphermsg]),
-    nonce, key
-  )
-}
 
 module.exports = State
 

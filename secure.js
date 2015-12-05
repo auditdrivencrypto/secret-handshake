@@ -1,4 +1,4 @@
-var sodium = require('chloride').api
+var sodium = require('chloride')
 var hash = sodium.crypto_hash_sha256
 var pull = require('pull-stream')
 var boxes = require('pull-box-stream')
