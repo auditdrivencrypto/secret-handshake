@@ -4,17 +4,21 @@ var shs = require('../')
 var tape = require('tape')
 var pull = require('pull-stream')
 
-var sodium = require('chloride').api
+var cl = require('chloride')
 var deepEqual = require('deep-equal')
 var bitflipper = require('pull-bitflipper')
 
-var alice = sodium.crypto_sign_keypair()
-var bob   = sodium.crypto_sign_keypair()
-var wally = sodium.crypto_sign_keypair()
+function hash (str) {
+  return cl.crypto_hash_sha256(new Buffer(str))
+}
+
+var alice = cl.crypto_sign_seed_keypair(hash('alice'))
+var bob   = cl.crypto_sign_seed_keypair(hash('bob'))
+var wally = cl.crypto_sign_seed_keypair(hash('wally'))
 
 //var secure = require('../secure')
 
-var app_key = require('crypto').randomBytes(32)
+var app_key = hash('app_key')
 
 tape('test handshake', function (t) {
 

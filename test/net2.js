@@ -5,10 +5,14 @@ var netshs = require('../net')
 var pull = require('pull-stream')
 var tape = require('tape')
 
-var sodium = require('chloride/build/Release/sodium')
+var cl = require('chloride')
 
-var alice = sodium.crypto_sign_keypair()
-var bob = sodium.crypto_sign_keypair()
+function hash (str) {
+  return cl.crypto_hash_sha256(new Buffer(str))
+}
+
+var alice = cl.crypto_sign_seed_keypair(hash('alice'))
+var bob = cl.crypto_sign_seed_keypair(hash('bob'))
 
 var crypto = require('crypto')
 var app_key = crypto.randomBytes(32)
@@ -134,7 +138,7 @@ tape('test net, error, stream', function (t) {
 tape('test net, create seed cap', function (t) {
 
   var seed = crypto.randomBytes(32)
-  var keys = sodium.crypto_sign_seed_keypair(seed)
+  var keys = cl.crypto_sign_seed_keypair(seed)
 
   var seedN = netshs({
     seed: seed,

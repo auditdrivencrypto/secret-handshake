@@ -4,12 +4,15 @@ var pull = require('pull-stream')
 var toPull = require('stream-to-pull-stream')
 var tape = require('tape')
 
-var sodium = require('chloride/build/Release/sodium')
+var cl = require('chloride')
+function hash (str) {
+  return cl.crypto_hash_sha256(new Buffer(str))
+}
 
-var alice = sodium.crypto_sign_keypair()
-var bob = sodium.crypto_sign_keypair()
+var alice = cl.crypto_sign_seed_keypair(hash('alice'))
+var bob = cl.crypto_sign_seed_keypair(hash('bob'))
 
-var app_key = require('crypto').randomBytes(32)
+var app_key = hash('app_key')
 
 var shs = require('../')
 
