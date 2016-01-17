@@ -27,7 +27,7 @@ function assertAppKey (opts) {
 function assertAddr (addr) {
   if(!isBuffer(addr.key))
     throw new Error('opts.key *must* be an ed25519 public key')
-  if(!Number.isInteger(addr.port))
+  if(!Number.isInteger(+addr.port))
     throw new Error('opts.port *must* be provided')
   if(!('string' === typeof addr.host || null == addr.host))
     throw new Error('opts.host must be string or null')
