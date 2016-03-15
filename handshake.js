@@ -16,7 +16,6 @@ exports.createClientStream = function (alice, app_key, timeout) {
   return function (bob_pub, cb) {
     var state = new State(app_key, alice, bob_pub)
 
-    console.log(timeout)
     var stream = Handshake({timeout: timeout}, cb)
     var shake = stream.handshake
     delete stream.handshake
@@ -95,4 +94,5 @@ exports.createServerStream = function (bob, authorize, app_key, timeout) {
     return stream
   }
 }
+
 
