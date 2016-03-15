@@ -16,6 +16,7 @@
     "pull-handshake": "^1.0.2",
     "pull-pair": "~1.0.0",
     "pull-pushable": "~1.1.4",
+    "pull-reader": "^1.2.2",
     "pull-stream": "~2.26.1",
     "stream-to-pull-stream": "^1.6.2"
   },
