@@ -2,8 +2,8 @@ var handshake = require('./handshake')
 var secure = require('./secure')
 
 exports.client =
-exports.createClient = function (alice, app_key) {
-  var create = handshake.client(alice, app_key)
+exports.createClient = function (alice, app_key, timeout) {
+  var create = handshake.client(alice, app_key, timeout)
 
   return function (bob, cb) {
     if(!Buffer.isBuffer(bob) || bob.length != 32)
@@ -13,8 +13,8 @@ exports.createClient = function (alice, app_key) {
 
 }
 exports.server =
-exports.createServer = function (bob, authorize, app_key) {
-  var create = handshake.server(bob, authorize, app_key)
+exports.createServer = function (bob, authorize, app_key, timeout) {
+  var create = handshake.server(bob, authorize, app_key, timeout)
 
   return function (cb) {
     return create(secure(cb))

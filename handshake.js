@@ -11,12 +11,13 @@ var mac_length = 16
 //client is Alice
 //create the client stream with the public key you expect to connect to.
 exports.client =
-exports.createClientStream = function (alice, app_key) {
+exports.createClientStream = function (alice, app_key, timeout) {
 
   return function (bob_pub, cb) {
     var state = new State(app_key, alice, bob_pub)
 
-    var stream = Handshake(cb)
+    console.log(timeout)
+    var stream = Handshake({timeout: timeout}, cb)
     var shake = stream.handshake
     delete stream.handshake
 
@@ -51,11 +52,11 @@ exports.createClientStream = function (alice, app_key) {
 
 //server is Bob.
 exports.server =
-exports.createServerStream = function (bob, authorize, app_key) {
+exports.createServerStream = function (bob, authorize, app_key, timeout) {
 
   return function (cb) {
     var state = new State(app_key, bob)
-    var stream = Handshake(cb)
+    var stream = Handshake({timeout: timeout}, cb)
 
     var shake = stream.handshake
     delete stream.handshake

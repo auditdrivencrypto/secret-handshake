@@ -41,7 +41,7 @@ module.exports = function createNode (opts) {
 
   assertOpts(opts); assertKeys({keys: keys}); assertAppKey(opts)
 
-  var create = shs.createClient(keys, opts.appKey)
+  var create = shs.createClient(keys, opts.appKey, opts.timeout)
 
   return {
     publicKey: keys.publicKey,
@@ -50,7 +50,7 @@ module.exports = function createNode (opts) {
         throw new Error('function opts.authenticate(pub, cb)'
           + '*must* be provided in order to receive connections')
       var createServerStream =
-        shs.createServer(keys, opts.authenticate, opts.appKey)
+        shs.createServer(keys, opts.authenticate, opts.appKey, opts.timeout)
       var server
       return server = net.createServer(function (stream) {
         stream = toPull.duplex(stream)
