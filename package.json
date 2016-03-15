@@ -12,19 +12,20 @@
     "deep-equal": "~1.0.0",
     "pull-box-stream": "^1.0.9",
     "pull-cat": "~1.1.5",
-    "pull-defer": "~0.2.0",
-    "pull-handshake": "^1.0.2",
-    "pull-pair": "~1.0.0",
-    "pull-pushable": "~1.1.4",
+    "pull-defer": "^0.2.2",
+    "pull-handshake": "^1.1.1",
+    "pull-pair": "^1.1.0",
+    "pull-pushable": "^2.0.0",
     "pull-reader": "^1.2.2",
-    "pull-stream": "~2.26.1",
+    "pull-stream": "^3.2.0",
     "stream-to-pull-stream": "^1.6.2"
   },
   "devDependencies": {
-    "pull-randomly-split": "~1.0.4",
-    "tape": "~4.0.0",
     "pull-bitflipper": "~0.1.0",
-    "stream-to-pull-stream": "~1.6.1"
+    "pull-hang": "0.0.0",
+    "pull-randomly-split": "~1.0.4",
+    "stream-to-pull-stream": "~1.6.1",
+    "tape": "~4.0.0"
   },
   "scripts": {
     "prepublish": "npm ls &&  npm test",
