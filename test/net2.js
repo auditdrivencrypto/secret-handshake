@@ -24,12 +24,14 @@ var bobN = netshs({
   appKey: app_key,
   authenticate: function (pub, cb) {
     cb(null, true) //accept
-  }
+  },
+  timeout: 100
 })
 
 var aliceN = netshs({
   keys: alice,
   appKey: app_key,
+  timeout: 100
   //alice doesn't need authenticate
   //because she is the client.
 })

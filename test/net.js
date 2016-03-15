@@ -20,9 +20,9 @@ tape('test with net', function (t) {
 
   var createServer = shs.createServer(bob, function (pub, cb) {
     cb(null, true) //accept
-  }, app_key)
+  }, app_key, 100)
 
-  var createClient = shs.createClient(alice, app_key)
+  var createClient = shs.createClient(alice, app_key, 100)
 
 
   var PORT = 45034
@@ -73,9 +73,9 @@ tape('test with net', function (t) {
   t.plan(2)
   var createServer = shs.createServer(bob, function (pub, cb) {
     cb() //reject, with no reason
-  }, app_key)
+  }, app_key, 100)
 
-  var createClient = shs.createClient(alice, app_key)
+  var createClient = shs.createClient(alice, app_key, 100)
 
   var PORT = 45035
 
