@@ -6,6 +6,7 @@ var shs = require('./')
 var isBuffer = Buffer.isBuffer
 var pull = require('pull-stream')
 var Defer = require('pull-defer/duplex')
+var RainbowSocks = require('rainbowsocks')
 
 function assertOpts (opts) {
   if(!(opts && 'object' === typeof opts))
@@ -66,7 +67,30 @@ module.exports = function createNode (opts) {
     },
     connect: function (addr, cb) {
       assertAddr(addr)
-      var stream = toPull.duplex(net.connect(addr.port, addr.host))
+
+      var stream
+      if (/\.onion$/.test(addr.host)) {
+        stream = Defer()
+        var sock = new RainbowSocks(opts.torPort || 9050, '127.0.0.1')
+        sock.on('error', function (err) {
+          stream.resolve({
+            source: function (abort, cb) { cb(err) },
+            sink: function (read) { read(err, function (){}) }
+          })
+        })
+        sock.on('connect', function () {
+          sock.connect(addr.host, addr.port, function (err, socket) {
+            if(err)
+              stream.resolve({
+                source: function (abort, cb) { cb(err) },
+                sink: function (read) { read(err, function (){}) }
+              })
+            else stream.resolve(toPull.duplex(socket))
+          })
+        })
+      } else {
+        stream = toPull.duplex(net.connect(addr.port, addr.host))
+      }
 
       if(cb) {
         pull(
