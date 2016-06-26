@@ -6,6 +6,7 @@ var shs = require('./')
 var isBuffer = Buffer.isBuffer
 var pull = require('pull-stream')
 var Defer = require('pull-defer/duplex')
+var RainbowSocks = require('rainbowsocks')
 
 function assertOpts (opts) {
   if(!(opts && 'object' === typeof opts))
@@ -31,6 +32,13 @@ function assertAddr (addr) {
     throw new Error('opts.port *must* be provided')
   if(!('string' === typeof addr.host || null == addr.host))
     throw new Error('opts.host must be string or null')
+}
+
+function errorPlex(err) {
+  return {
+    source: function (abort, cb) { cb(err) },
+    sink: function (read) { read(err, function (){}) }
+  }
 }
 
 module.exports = function createNode (opts) {
@@ -66,7 +74,28 @@ module.exports = function createNode (opts) {
     },
     connect: function (addr, cb) {
       assertAddr(addr)
-      var stream = toPull.duplex(net.connect(addr.port, addr.host))
+
+      var stream
+      if (/\.onion$/.test(addr.host)) {
+        stream = Defer()
+        var sock = new RainbowSocks(opts.torPort || 9050, '127.0.0.1')
+        var done = false
+        sock.on('error', function (err) {
+          if (done) return
+          done = true
+          stream.resolve(errorPlex(err))
+        })
+        sock.on('connect', function () {
+          sock.connect(addr.host, addr.port, function (err, socket) {
+            if (done) return
+            done = true
+            if(err) stream.resolve(errorPlex(err))
+            else stream.resolve(toPull.duplex(socket))
+          })
+        })
+      } else {
+        stream = toPull.duplex(net.connect(addr.port, addr.host))
+      }
 
       if(cb) {
         pull(
@@ -83,10 +112,7 @@ module.exports = function createNode (opts) {
           stream,
           create(addr.key, function (err, stream) {
             if(err)
-              defer.resolve({
-                source: function (abort, cb) { cb(err) },
-                sink: function (read) { read(err, function (){}) }
-              })
+              defer.resolve(errorPlex(err))
             else defer.resolve(stream)
           }),
           stream
