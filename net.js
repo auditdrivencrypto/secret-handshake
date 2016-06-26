@@ -34,6 +34,13 @@ function assertAddr (addr) {
     throw new Error('opts.host must be string or null')
 }
 
+function errorPlex(err) {
+  return {
+    source: function (abort, cb) { cb(err) },
+    sink: function (read) { read(err, function (){}) }
+  }
+}
+
 module.exports = function createNode (opts) {
   var keys =
     isBuffer(opts.seed)
@@ -73,18 +80,12 @@ module.exports = function createNode (opts) {
         stream = Defer()
         var sock = new RainbowSocks(opts.torPort || 9050, '127.0.0.1')
         sock.on('error', function (err) {
-          stream.resolve({
-            source: function (abort, cb) { cb(err) },
-            sink: function (read) { read(err, function (){}) }
-          })
+          stream.resolve(errorPlex(err))
         })
         sock.on('connect', function () {
           sock.connect(addr.host, addr.port, function (err, socket) {
             if(err)
-              stream.resolve({
-                source: function (abort, cb) { cb(err) },
-                sink: function (read) { read(err, function (){}) }
-              })
+              stream.resolve(errorPlex(err))
             else stream.resolve(toPull.duplex(socket))
           })
         })
@@ -107,10 +108,7 @@ module.exports = function createNode (opts) {
           stream,
           create(addr.key, function (err, stream) {
             if(err)
-              defer.resolve({
-                source: function (abort, cb) { cb(err) },
-                sink: function (read) { read(err, function (){}) }
-              })
+              defer.resolve(errorPlex(err))
             else defer.resolve(stream)
           }),
           stream
