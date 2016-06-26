@@ -79,13 +79,17 @@ module.exports = function createNode (opts) {
       if (/\.onion$/.test(addr.host)) {
         stream = Defer()
         var sock = new RainbowSocks(opts.torPort || 9050, '127.0.0.1')
+        var done = false
         sock.on('error', function (err) {
+          if (done) return
+          done = true
           stream.resolve(errorPlex(err))
         })
         sock.on('connect', function () {
           sock.connect(addr.host, addr.port, function (err, socket) {
-            if(err)
-              stream.resolve(errorPlex(err))
+            if (done) return
+            done = true
+            if(err) stream.resolve(errorPlex(err))
             else stream.resolve(toPull.duplex(socket))
           })
         })
