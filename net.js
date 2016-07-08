@@ -1,3 +1,7 @@
+// will probably remove this.
+// I am now moving using secret-handshake via
+// https://github.com/dominictarr/multiserver
+// instead.
 
 var sodium = require('chloride')
 var net = require('net')
