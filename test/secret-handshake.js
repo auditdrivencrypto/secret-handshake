@@ -69,9 +69,9 @@ tape('test handshake', function (t) {
 
   pull(
     aliceHS,
-    pull.through(console.log.bind(null, 'A->B')),
+    pull.through(console.log.bind(console, 'A->B')),
     bobHS,
-    pull.through(console.log.bind(null, 'A<-B')),
+    pull.through(console.log.bind(console, 'A<-B')),
     aliceHS
   )
 
