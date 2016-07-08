@@ -246,3 +246,32 @@ tape('server timeout error if there is no response', function (t) {
   //do nothing, so aliceHS should timeout
 })
 
+tape('test handshake', function (t) {
+
+  var aliceHS = shs.client(hash('alice'), app_key, 100)
+    (bob.publicKey, function (err, stream) {
+
+      if(err) throw err
+
+    })
+
+  var r = Math.random()
+  var bobHS = shs.server(hash('bob'), function (public, cb) {
+      t.deepEqual(public, alice.publicKey)
+      cb(null, {okay: true, random: r})
+    }, app_key, 100)
+      (function (err, stream) {
+        if(err) throw err
+
+        t.deepEqual(stream.auth, {okay: true, random: r})
+        t.end()
+      })
+
+  pull(
+    aliceHS,
+    bobHS,
+    aliceHS
+  )
+
+})
+
