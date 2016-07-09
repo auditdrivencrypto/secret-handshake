@@ -2,6 +2,7 @@
 var sodium      = require('chloride')
 
 var keypair     = sodium.crypto_box_keypair
+var from_seed   = sodium.crypto_sign_seed_keypair
 var shared      = sodium.crypto_scalarmult
 var hash        = sodium.crypto_hash_sha256
 var sign        = sodium.crypto_sign_detached
@@ -27,8 +28,12 @@ var mac_length = 16
 
 module.exports = State
 
-function State (app_key, local, remote) {
-  if(!(this instanceof State)) return new State(app_key, local, remote)
+function State (app_key, local, remote, seed) {
+
+  if(!(this instanceof State)) return new State(app_key, local, remote, seed)
+
+  if(seed) local = from_seed(seed)
+
   this.app_key = app_key
   var kx = keypair()
   this.local = {
@@ -172,4 +177,8 @@ function cleanSecrets () {
 
   return state
 }
+
+
+
+
 
