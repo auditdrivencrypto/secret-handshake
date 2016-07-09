@@ -6,35 +6,29 @@ function isBuffer(buf, len) {
   return Buffer.isBuffer(buf) && buf.length === len
 }
 
-function toKeys(seed) {
-  if(isBuffer(seed.publicKey, 32) && isBuffer(seed.secretKey, 64)) return seed
-  if(isBuffer(seed, 32))
-    return cl.crypto_sign_seed_keypair(seed)
-  throw new Error('keypair or seed must be provided')
-}
-
 exports.client =
 exports.createClient = function (alice, app_key, timeout) {
-  var create = handshake.client(toKeys(alice), app_key, timeout)
+  var create = handshake.client(alice, app_key, timeout)
 
-  return function (bob, cb) {
+  return function (bob, seed, cb) {
     if(!isBuffer(bob, 32))
       throw new Error('createClient *must* be passed a public key')
-    return create(bob, secure(cb))
+    if('function' === typeof seed)
+      return create(bob, secure(seed))
+    else if(!isBuffer(seed, 32))
+      throw new Error('seed must be a 32 bit buffer')
+    return create(bob, seed, secure(cb))
   }
 
 }
 exports.server =
 exports.createServer = function (bob, authorize, app_key, timeout) {
-  var create = handshake.server(toKeys(bob), authorize, app_key, timeout)
+  var create = handshake.server(bob, authorize, app_key, timeout)
 
   return function (cb) {
     return create(secure(cb))
   }
 
 }
-
-
-
 
 

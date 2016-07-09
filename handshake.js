@@ -13,8 +13,12 @@ var mac_length = 16
 exports.client =
 exports.createClientStream = function (alice, app_key, timeout) {
 
-  return function (bob_pub, cb) {
-    var state = new State(app_key, alice, bob_pub)
+  return function (bob_pub, seed, cb) {
+    if('function' == typeof seed)
+      cb = seed, seed = null
+
+    //alice may be null.
+    var state = new State(app_key, alice, bob_pub, seed)
 
     var stream = Handshake({timeout: timeout}, cb)
     var shake = stream.handshake
@@ -94,5 +98,6 @@ exports.createServerStream = function (bob, authorize, app_key, timeout) {
     return stream
   }
 }
+
 
 
