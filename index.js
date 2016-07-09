@@ -15,9 +15,8 @@ exports.createClient = function (alice, app_key, timeout) {
       throw new Error('createClient *must* be passed a public key')
     if('function' === typeof seed)
       return create(bob, secure(seed))
-    else if(!isBuffer(seed, 32))
-      throw new Error('seed must be a 32 bit buffer')
-    return create(bob, seed, secure(cb))
+    else
+      return create(bob, seed, secure(cb))
   }
 
 }
@@ -30,5 +29,6 @@ exports.createServer = function (bob, authorize, app_key, timeout) {
   }
 
 }
+
 
 
