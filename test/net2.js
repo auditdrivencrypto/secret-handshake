@@ -1,5 +1,5 @@
 
-var netshs = require('../net')
+var netshs = require('./net')
 
 
 var pull = require('pull-stream')

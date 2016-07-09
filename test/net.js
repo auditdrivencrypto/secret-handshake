@@ -1,118 +1,105 @@
+// will probably remove this.
+// I am now moving using secret-handshake via
+// https://github.com/dominictarr/multiserver
+// instead.
 
+var sodium = require('chloride')
 var net = require('net')
-var pull = require('pull-stream')
 var toPull = require('stream-to-pull-stream')
-var tape = require('tape')
+var shs = require('../')
+var isBuffer = Buffer.isBuffer
+var pull = require('pull-stream')
+var Defer = require('pull-defer/duplex')
 
-var cl = require('chloride')
-function hash (str) {
-  return cl.crypto_hash_sha256(new Buffer(str))
+function assertOpts (opts) {
+  if(!(opts && 'object' === typeof opts))
+    throw new Error('opts *must* be provided')
+}
+function assertKeys (opts) {
+  if(!(
+      opts.keys
+    && isBuffer(opts.keys.publicKey)
+    && isBuffer(opts.keys.secretKey)
+  ))
+    throw new Error('opts.keys = ed25519 key pair *must* be provided.')
 }
 
-var alice = cl.crypto_sign_seed_keypair(hash('alice'))
-var bob = cl.crypto_sign_seed_keypair(hash('bob'))
+function assertAppKey (opts) {
+  if(!isBuffer(opts.appKey))
+    throw new Error('appKey must be provided')
+}
 
-var app_key = hash('app_key')
+function assertAddr (addr) {
+  if(!isBuffer(addr.key))
+    throw new Error('opts.key *must* be an ed25519 public key')
+  if(!Number.isInteger(+addr.port))
+    throw new Error('opts.port *must* be provided')
+  if(!('string' === typeof addr.host || null == addr.host))
+    throw new Error('opts.host must be string or null')
+}
 
-var shs = require('../')
+module.exports = function createNode (opts) {
+  var keys =
+    isBuffer(opts.seed)
+    ? sodium.crypto_sign_seed_keypair(opts.seed)
+    : opts.keys
 
-tape('test with net', function (t) {
+  assertOpts(opts); assertKeys({keys: keys}); assertAppKey(opts)
 
-  var createServer = shs.createServer(bob, function (pub, cb) {
-    cb(null, true) //accept
-  }, app_key, 100)
+  var create = shs.createClient(keys, opts.appKey, opts.timeout)
 
-  var createClient = shs.createClient(alice, app_key, 100)
-
-
-  var PORT = 45034
-
-  var server = net.createServer(function (stream) {
-
-    stream = toPull.duplex(stream)
-
-    pull(
-      stream,
-      createServer(function (err, stream) {
-        console.log('server connected', err, stream)
-
-        pull(stream, stream) //echo
-      }),
-      stream
-    )
-
-  }).listen(PORT, function () {
-
-    var stream = toPull.duplex(net.connect(PORT))
-
-    console.log('CLIENT connect')
-    pull(
-      stream,
-      createClient(bob.publicKey, function (err, stream) {
-        console.log('client connected', err, stream)
+  return {
+    publicKey: keys.publicKey,
+    createServer: function (onConnect) {
+      if('function' !== typeof opts.authenticate)
+        throw new Error('function opts.authenticate(pub, cb)'
+          + '*must* be provided in order to receive connections')
+      var createServerStream =
+        shs.createServer(keys, opts.authenticate, opts.appKey, opts.timeout)
+      var server
+      return server = net.createServer(function (stream) {
+        stream = toPull.duplex(stream)
         pull(
-          pull.values([new Buffer('HELLO')]),
           stream,
-          pull.collect(function (err, data) {
-            t.notOk(err)
-            t.deepEqual(Buffer.concat(data), new Buffer('HELLO'))
-            server.close()
-            t.end()
-          })
+          createServerStream(function (err, stream) {
+            if(err) return server.emit('unauthenticated', err)
+            onConnect(stream)
+          }),
+          stream
         )
-      }),
-      stream
-    )
+      })
+    },
+    connect: function (addr, cb) {
+      assertAddr(addr)
+      var stream = toPull.duplex(net.connect(addr.port, addr.host))
 
-  })
+      if(cb) {
+        pull(
+          stream,
+          create(addr.key, cb),
+          stream
+        )
+      }
+      else {
 
-})
+        var defer = Defer()
 
-tape('test with net', function (t) {
-  var n = 2
-  t.plan(2)
-  var createServer = shs.createServer(bob, function (pub, cb) {
-    cb() //reject, with no reason
-  }, app_key, 100)
+        pull(
+          stream,
+          create(addr.key, function (err, stream) {
+            if(err)
+              defer.resolve({
+                source: function (abort, cb) { cb(err) },
+                sink: function (read) { read(err, function (){}) }
+              })
+            else defer.resolve(stream)
+          }),
+          stream
+        )
 
-  var createClient = shs.createClient(alice, app_key, 100)
+        return defer
 
-  var PORT = 45035
-
-  var server = net.createServer(function (stream) {
-
-    stream = toPull.duplex(stream)
-
-    pull(
-      stream,
-      createServer(function (err, stream) {
-        t.ok(err)
-        console.log('server connected', err, stream)
-        next()
-      }),
-      stream
-    )
-
-  }).listen(PORT, function () {
-
-    var stream = toPull.duplex(net.connect(PORT))
-
-    console.log('CLIENT connect')
-    pull(
-      stream,
-      createClient(bob.publicKey, function (err, stream) {
-        console.log('client connected', err, stream)
-        t.ok(err)
-        next()
-      }),
-      stream
-    )
-
-  })
-
-  function next() {
-    if(--n) return
-    server.close()
+      }
+    }
   }
-
-})
+}
