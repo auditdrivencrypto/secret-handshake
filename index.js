@@ -31,4 +31,8 @@ exports.createServer = function (bob, authorize, app_key, timeout) {
 }
 
 
-
+exports.toKeys = function (keys) {
+  if(isBuffer(keys, 32))
+    return cl.crypto_sign_seed_keypair(keys)
+  return keys
+}
