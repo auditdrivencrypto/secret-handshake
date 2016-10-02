@@ -275,3 +275,11 @@ tape('test handshake', function (t) {
 
 })
 
+
+tape('toKeys', function (t) {
+  t.deepEqual(shs.toKeys(hash('alice')), alice)
+  t.deepEqual(shs.toKeys(alice), alice)
+  t.end()
+})
+
+
