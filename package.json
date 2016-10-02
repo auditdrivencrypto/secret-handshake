@@ -11,19 +11,13 @@
     "chloride": "^2.0.1",
     "deep-equal": "~1.0.0",
     "pull-box-stream": "^1.0.9",
-    "pull-cat": "~1.1.5",
-    "pull-defer": "^0.2.2",
     "pull-handshake": "^1.1.1",
-    "pull-pair": "^1.1.0",
-    "pull-pushable": "^2.0.0",
-    "pull-reader": "^1.2.2",
-    "pull-stream": "^3.2.0",
-    "stream-to-pull-stream": "^1.6.2"
+    "pull-stream": "^3.4.5"
   },
   "devDependencies": {
+    "pull-defer": "^0.2.2",
     "pull-bitflipper": "~0.1.0",
     "pull-hang": "0.0.0",
-    "pull-randomly-split": "~1.0.4",
     "stream-to-pull-stream": "~1.6.1",
     "tape": "~4.0.0"
   },
@@ -34,3 +28,6 @@
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
 }
+
+
+
