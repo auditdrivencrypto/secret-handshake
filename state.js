@@ -82,9 +82,9 @@ function verifyChallenge (challenge) {
 }
 
 
-proto.createClientAuth =
-function createClientAuth () {
+proto.clientVerifyChallenge = function (challenge) {
   var state = this
+  if(!stateless.verifyChallenge.call(this, challenge)) return null
   //now we have agreed on the secret.
   //this can be an encryption secret,
   //or a hmac secret.
@@ -98,6 +98,13 @@ function createClientAuth () {
   var sig = sign(signed, state.local.secret)
 
   state.local.hello = Buffer.concat([sig, state.local.public])
+
+  return true
+}
+
+proto.createClientAuth =
+function createClientAuth () {
+  var state = this
   return box(state.local.hello, nonce, state.secret2)
 }
 
@@ -183,6 +190,7 @@ function cleanSecrets () {
 
   return state
 }
+
 
 
 

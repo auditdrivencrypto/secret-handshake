@@ -34,7 +34,7 @@ exports.createClientStream = function (alice, app_key, timeout) {
     shake.read(challenge_length, function (err, msg) {
       if(err) return abort(err, 'challenge not accepted')
       //create the challenge first, because we need to generate a local key
-      if(!state.verifyChallenge(msg))
+      if(!state.clientVerifyChallenge(msg))
         return abort(null, 'wrong protocol (version?)')
 
       shake.write(state.createClientAuth())
