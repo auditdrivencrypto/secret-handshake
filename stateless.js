@@ -75,12 +75,15 @@ exports.clean = function (state) {
   // use a different secret hash(secret3) in the rest of the session,
   // and so that a sloppy application cannot compromise the handshake.
 
-//  state.local.secret.fill(0)
   state.shash.fill(0)
   state.secret.fill(0)
   state.a_bob.fill(0)
   state.b_alice.fill(0)
+
   state.secret = hash(state.secret3)
+  state.encryptKey = hash(concat([state.secret, state.remote.publicKey]))
+  state.decryptKey = hash(concat([state.secret, state.local.publicKey]))
+
   state.secret2.fill(0)
   state.secret3.fill(0)
   state.local.kx_sk.fill(0)
@@ -169,5 +172,4 @@ exports.serverCreateAccept = function (state) {
   var okay = sign(signed, state.local.secretKey)
   return box(okay, nonce, state.secret3)
 }
-
 
