@@ -57,4 +57,18 @@ exports.createChallenge = function () {
 }
 
 
+exports.verifyChallenge = function (challenge) {
+  var state = this
 
+  var mac = challenge.slice(0, 32)
+  var remote_pk = challenge.slice(32, challenge.length)
+  if(0 !== verify_auth(mac, remote_pk, state.app_key))
+    return null
+
+  state.remote.kx_pk = remote_pk
+  state.remote.app_mac = mac
+  state.secret = shared(state.local.kx_sk, state.remote.kx_pk)
+  state.shash = hash(state.secret)
+
+  return state
+}
