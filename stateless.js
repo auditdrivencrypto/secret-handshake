@@ -95,3 +95,24 @@ exports.clientVerifyChallenge = function (challenge) {
 
   return state
 }
+
+exports.clientCreateAuth = function () {
+  var state = this
+  return box(state.local.hello, nonce, state.secret2)
+}
+
+exports.clientVerifyAccept = function (boxed_okay) {
+  var state = this
+
+  var b_alice = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+  state.b_alice = b_alice
+//  state.secret3 = hash(concat([state.secret2, b_alice]))
+  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
+
+  var sig = unbox(boxed_okay, nonce, state.secret3)
+  if(!sig) return null
+  var signed = concat([state.app_key, state.local.hello, state.shash])
+  if(!verify(sig, signed, state.remote.public))
+      return null
+  return state
+}

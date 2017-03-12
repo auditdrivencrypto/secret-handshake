@@ -105,8 +105,9 @@ proto.clientVerifyChallenge = function (challenge) {
 
 proto.createClientAuth =
 function createClientAuth () {
-  var state = this
-  return box(state.local.hello, nonce, state.secret2)
+  return stateless.clientCreateAuth.call(this)
+//  var state = this
+//  return box(state.local.hello, nonce, state.secret2)
 }
 
 proto.verifyClientAuth =
@@ -149,19 +150,20 @@ function createServerAccept () {
 
 proto.verifyServerAccept =
 function verifyServerAccept (boxed_okay) {
-  var state = this
-
-  var b_alice = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
-  state.b_alice = b_alice
-//  state.secret3 = hash(concat([state.secret2, b_alice]))
-  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
-
-  var sig = unbox(boxed_okay, nonce, state.secret3)
-  if(!sig) return null
-  var signed = concat([state.app_key, state.local.hello, state.shash])
-  if(!verify(sig, signed, state.remote.public))
-      return null
-  return true
+  return stateless.clientVerifyAccept.call(this, boxed_okay)
+//  var state = this
+//
+//  var b_alice = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+//  state.b_alice = b_alice
+////  state.secret3 = hash(concat([state.secret2, b_alice]))
+//  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
+//
+//  var sig = unbox(boxed_okay, nonce, state.secret3)
+//  if(!sig) return null
+//  var signed = concat([state.app_key, state.local.hello, state.shash])
+//  if(!verify(sig, signed, state.remote.public))
+//      return null
+//  return true
 }
 
 proto.cleanSecrets =
