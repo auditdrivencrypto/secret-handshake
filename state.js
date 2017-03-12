@@ -88,16 +88,17 @@ function verifyClientAuth (data) {
 
 proto.createServerAccept =
 function createServerAccept () {
-  var state = this
+  return stateless.serverCreateAccept.call(this)
+//  var state = this
 
-  //shared key between my local ephemeral key + remote public
-  var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
-  state.b_alice = b_alice
-  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
-
-  var signed = concat([state.app_key, state.remote.hello, state.shash])
-  var okay = sign(signed, state.local.secret)
-  return box(okay, nonce, state.secret3)
+//  //shared key between my local ephemeral key + remote public
+//  var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+//  state.b_alice = b_alice
+//  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
+//
+//  var signed = concat([state.app_key, state.remote.hello, state.shash])
+//  var okay = sign(signed, state.local.secret)
+//  return box(okay, nonce, state.secret3)
 }
 
 proto.verifyServerAccept =

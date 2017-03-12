@@ -142,6 +142,19 @@ exports.serverVerifyAuth = function (data) {
     return null
 
   state.remote.public = public
+  //shared key between my local ephemeral key + remote public
+  var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+  state.b_alice = b_alice
+  state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
+
   return state
+
+}
+
+exports.serverCreateAccept = function () {
+  var state = this
+  var signed = concat([state.app_key, state.remote.hello, state.shash])
+  var okay = sign(signed, state.local.secret)
+  return box(okay, nonce, state.secret3)
 
 }
