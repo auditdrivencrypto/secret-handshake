@@ -61,7 +61,9 @@ exports.server =
 exports.createServerStream = function (bob, authorize, app_key, timeout) {
 
   return function (cb) {
-    var state = new State(app_key, bob)
+//    var state = new State(app_key, bob)
+    //note, the server doesn't know the remote untill it receives ClientAuth
+    var state = stateless.initialize.call({}, app_key, bob, null, crypto.randomBytes(32))
     var stream = Handshake({timeout: timeout}, cb)
 
     var shake = stream.handshake
@@ -74,33 +76,31 @@ exports.createServerStream = function (bob, authorize, app_key, timeout) {
 
     shake.read(challenge_length, function (err, challenge) {
       if(err) return abort(err, 'expected challenge')
-      if(!state.verifyChallenge(challenge))
+      if(!(state = stateless.verifyChallenge.call(state, challenge)))
         return shake.abort(new Error('wrong protocol/version'))
 
-      shake.write(state.createChallenge())
+      shake.write(stateless.createChallenge.call(state))
       shake.read(client_auth_length, function (err, hello) {
         if(err) return abort(err, 'expected hello')
-        if(!state.verifyClientAuth(hello)) {
-          //we know who the client was, but chose not to answer:
-          if(state.remote.public)
-            return abort(null, 'unauthenticated client:' + state.remote.public.toString('hex'), cb)
-          //client dialed wrong number... (we don't know who they where)
-          else
-            return abort(null, 'wrong number')
-        }
+        if(!(state = stateless.serverVerifyAuth.call(state, hello)))
+          return abort(null, 'wrong number')
+
         //check if the user wants to speak to alice.
         authorize(state.remote.public, function (err, auth) {
           if(auth == null && !err) err = new Error('client unauthorized')
           if(!auth) return abort(err, 'client authentication rejected')
           state.auth = auth
-          shake.write(state.createServerAccept())
-          cb(null, shake.rest(), state.cleanSecrets())
+          shake.write(stateless.serverCreateAccept.call(state))
+          cb(null, shake.rest(), state = stateless.clean.call(state))
         })
       })
     })
     return stream
   }
 }
+
+
+
 
 
 
