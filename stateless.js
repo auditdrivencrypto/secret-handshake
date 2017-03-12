@@ -23,6 +23,7 @@ var client_auth_length = 16+32+64
 var server_auth_length = 16+64
 var mac_length = 16
 
+//both client and server
 
 exports.initialize = function (app_key, local, remote, random, seed) {
 
@@ -73,6 +74,8 @@ exports.verifyChallenge = function (challenge) {
   return state
 }
 
+//client side only (Alice)
+
 exports.clientVerifyChallenge = function (challenge) {
 
   var state = this
@@ -116,3 +119,7 @@ exports.clientVerifyAccept = function (boxed_okay) {
       return null
   return state
 }
+
+//server side only (Bob)
+
+
