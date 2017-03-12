@@ -122,4 +122,26 @@ exports.clientVerifyAccept = function (boxed_okay) {
 
 //server side only (Bob)
 
+exports.serverVerifyAuth = function (data) {
 
+  var state = this
+
+  var a_bob = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+  state.a_bob = a_bob
+  state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
+
+  state.remote.hello = unbox(data, nonce, state.secret2)
+  if(!state.remote.hello)
+    return null
+
+  var sig = state.remote.hello.slice(0, 64)
+  var public = state.remote.hello.slice(64, client_auth_length)
+
+  var signed = concat([state.app_key, state.local.public, state.shash])
+  if(!verify(sig, signed, public))
+    return null
+
+  state.remote.public = public
+  return state
+
+}
