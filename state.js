@@ -1,4 +1,6 @@
 
+var stateless = require('./stateless')
+
 var sodium      = require('chloride')
 
 var keypair     = sodium.crypto_box_keypair
@@ -32,20 +34,22 @@ function State (app_key, local, remote, seed) {
 
   if(!(this instanceof State)) return new State(app_key, local, remote, seed)
 
-  if(seed) local = from_seed(seed)
+  stateless.initialize.call(this, app_key, local, remote, require('crypto').randomBytes(32), seed)
 
-  this.app_key = app_key
-  var kx = keypair()
-  this.local = {
-    kx_pk: kx.publicKey,
-    kx_sk: kx.secretKey,
-    public: local.publicKey,
-    secret: local.secretKey
-  }
-  this.remote = {
-    public: remote || null
-  }
-
+//  if(seed) local = from_seed(seed)
+//
+//  this.app_key = app_key
+//  var kx = keypair()
+//  this.local = {
+//    kx_pk: kx.publicKey,
+//    kx_sk: kx.secretKey,
+//    public: local.publicKey,
+//    secret: local.secretKey
+//  }
+//  this.remote = {
+//    public: remote || null
+//  }
+//
 }
 
 var proto = State.prototype
