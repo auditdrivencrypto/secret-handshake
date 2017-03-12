@@ -74,6 +74,32 @@ exports.verifyChallenge = function (challenge) {
   return state
 }
 
+exports.clean = function () {
+  var state = this
+
+  // clean away all the secrets for forward security.
+  // use a different secret hash(secret3) in the rest of the session,
+  // and so that a sloppy application cannot compromise the handshake.
+
+  delete state.local.secret
+  state.shash.fill(0)
+  state.secret.fill(0)
+  state.a_bob.fill(0)
+  state.b_alice.fill(0)
+  state.secret = hash(state.secret3)
+  state.secret2.fill(0)
+  state.secret3.fill(0)
+  state.local.kx_sk.fill(0)
+
+  delete state.shash
+  delete state.secret2
+  delete state.secret3
+  delete state.a_bob
+  delete state.b_alice
+  delete state.local.kx_sk
+  return state
+}
+
 //client side only (Alice)
 
 exports.clientVerifyChallenge = function (challenge) {
@@ -158,3 +184,5 @@ exports.serverCreateAccept = function () {
   return box(okay, nonce, state.secret3)
 
 }
+
+
