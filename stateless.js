@@ -26,27 +26,35 @@ var mac_length = 16
 
 exports.initialize = function (app_key, local, remote, random, seed) {
 
-  var self = this || {}
+  var state = this
 
   if(seed) local = from_seed(seed)
 
   //TODO: sodium is missing box_seed_keypair. should make PR for that.
   var _key = from_seed(random)
 
-  self.app_key = app_key
+  state.app_key = app_key
 //  var kx = keypair(random)
-  self.local = {
-    kx_pk: curvify_pk(_key.publicKey),
-    kx_sk: curvify_sk(_key.secretKey),
+  var kx_pk = curvify_pk(_key.publicKey)
+  var kx_sk = curvify_sk(_key.secretKey)
+  state.local = {
+    kx_pk: kx_pk,
+    kx_sk: kx_sk,
     public: local.publicKey,
-    secret: local.secretKey
+    secret: local.secretKey,
+    app_mac: auth(kx_pk, app_key)
   }
-  self.remote = {
+  state.remote = {
     public: remote || null
   }
 
-  return self
-
+  return state
 }
+
+exports.createChallenge = function () {
+  var state = this
+  return concat([state.local.app_mac, state.local.kx_pk])
+}
+
 
 

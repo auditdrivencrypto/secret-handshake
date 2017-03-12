@@ -56,10 +56,11 @@ var proto = State.prototype
 
 proto.createChallenge =
 function createChallenge () {
-  var state = this
+  return stateless.createChallenge.call(this)
+//  var state = this
 
-  state.local.app_mac = auth(state.local.kx_pk, state.app_key)
-  return concat([state.local.app_mac, state.local.kx_pk])
+//  state.local.app_mac = auth(state.local.kx_pk, state.app_key)
+//  return concat([state.local.app_mac, state.local.kx_pk])
 }
 
 proto.verifyChallenge =
@@ -181,6 +182,7 @@ function cleanSecrets () {
 
   return state
 }
+
 
 
 
