@@ -2,6 +2,8 @@ var pull = require('pull-stream')
 
 var Handshake = require('pull-handshake')
 var State = require('./state')
+var stateless = require('./stateless')
+var crypto = require('crypto')
 
 var challenge_length = 64
 var client_auth_length = 16+32+64
@@ -18,7 +20,8 @@ exports.createClientStream = function (alice, app_key, timeout) {
       cb = seed, seed = null
 
     //alice may be null.
-    var state = new State(app_key, alice, bob_pub, seed)
+    var state = stateless.initialize.call({}, app_key, alice, bob_pub, crypto.randomBytes(32), seed)
+      //new State(app_key, alice, bob_pub, crypto.randomBytes(32), seed)
 
     var stream = Handshake({timeout: timeout}, cb)
     var shake = stream.handshake
@@ -29,23 +32,23 @@ exports.createClientStream = function (alice, app_key, timeout) {
       else                    shake.abort(new Error(reason), cb)
     }
 
-    shake.write(state.createChallenge())
+    shake.write(stateless.createChallenge.call(state))
 
     shake.read(challenge_length, function (err, msg) {
       if(err) return abort(err, 'challenge not accepted')
       //create the challenge first, because we need to generate a local key
-      if(!state.clientVerifyChallenge(msg))
+      if(!(state = stateless.clientVerifyChallenge.call(state, msg)))
         return abort(null, 'wrong protocol (version?)')
 
-      shake.write(state.createClientAuth())
+      shake.write(stateless.clientCreateAuth.call(state))
 
       shake.read(server_auth_length, function (err, boxed_sig) {
         if(err) return abort(err, 'hello not accepted')
 
-        if(!state.verifyServerAccept(boxed_sig))
+        if(!(state = stateless.clientVerifyAccept.call(state, boxed_sig)))
           return abort(null, 'server not authenticated')
 
-        cb(null, shake.rest(), state.cleanSecrets())
+        cb(null, shake.rest(), state = stateless.clean.call(state))
       })
     })
 
