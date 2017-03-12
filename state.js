@@ -84,22 +84,23 @@ function verifyChallenge (challenge) {
 
 proto.clientVerifyChallenge = function (challenge) {
   var state = this
-  if(!stateless.verifyChallenge.call(this, challenge)) return null
-  //now we have agreed on the secret.
-  //this can be an encryption secret,
-  //or a hmac secret.
-
-  // shared(local.kx, remote.public)
-  var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.public))
-  state.a_bob = a_bob
-  state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
-
-  var signed = concat([state.app_key, state.remote.public, state.shash])
-  var sig = sign(signed, state.local.secret)
-
-  state.local.hello = Buffer.concat([sig, state.local.public])
-
-  return true
+  return !!stateless.clientVerifyChallenge.call(this, challenge)
+//  if(!stateless.verifyChallenge.call(this, challenge)) return null
+//  //now we have agreed on the secret.
+//  //this can be an encryption secret,
+//  //or a hmac secret.
+//
+//  // shared(local.kx, remote.public)
+//  var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+//  state.a_bob = a_bob
+//  state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
+//
+//  var signed = concat([state.app_key, state.remote.public, state.shash])
+//  var sig = sign(signed, state.local.secret)
+//
+//  state.local.hello = Buffer.concat([sig, state.local.public])
+//
+//  return true
 }
 
 proto.createClientAuth =
