@@ -1,4 +1,3 @@
-
 var sodium      = require('chloride')
 
 var keypair     = sodium.crypto_box_seed_keypair
@@ -25,42 +24,39 @@ var mac_length = 16
 
 //both client and server
 
-exports.initialize = function (app_key, local, remote, random, seed) {
+exports.initialize = function (state) {
 
-  var state = this
-
-  if(seed) local = from_seed(seed)
+  if(state.seed) state.local = from_seed(state.seed)
 
   //TODO: sodium is missing box_seed_keypair. should make PR for that.
-  var _key = from_seed(random)
 
-  state.app_key = app_key
+  var _key = from_seed(state.random)
 //  var kx = keypair(random)
   var kx_pk = curvify_pk(_key.publicKey)
   var kx_sk = curvify_sk(_key.secretKey)
+
   state.local = {
     kx_pk: kx_pk,
     kx_sk: kx_sk,
-    public: local.publicKey,
-    secret: local.secretKey,
-    app_mac: auth(kx_pk, app_key)
+    publicKey: state.local.publicKey,
+    secretKey: state.local.secretKey,
+    app_mac: auth(kx_pk, state.app_key)
   }
-  state.remote = {
-    public: remote || null
-  }
+
+  state.local.kx_pk = kx_pk
+  state.local.kx_sk = kx_sk
+  state.local.app_mac = auth(kx_pk, state.app_key)
+  state.remote = state.remote || {}
 
   return state
 }
 
-exports.createChallenge = function () {
-  var state = this
+exports.createChallenge = function (state) {
   return concat([state.local.app_mac, state.local.kx_pk])
 }
 
 
-exports.verifyChallenge = function (challenge) {
-  var state = this
-
+exports.verifyChallenge = function (state, challenge) {
   var mac = challenge.slice(0, 32)
   var remote_pk = challenge.slice(32, challenge.length)
   if(0 !== verify_auth(mac, remote_pk, state.app_key))
@@ -74,14 +70,12 @@ exports.verifyChallenge = function (challenge) {
   return state
 }
 
-exports.clean = function () {
-  var state = this
-
+exports.clean = function (state) {
   // clean away all the secrets for forward security.
   // use a different secret hash(secret3) in the rest of the session,
   // and so that a sloppy application cannot compromise the handshake.
 
-  delete state.local.secret
+//  state.local.secret.fill(0)
   state.shash.fill(0)
   state.secret.fill(0)
   state.a_bob.fill(0)
@@ -91,49 +85,44 @@ exports.clean = function () {
   state.secret3.fill(0)
   state.local.kx_sk.fill(0)
 
-  delete state.shash
-  delete state.secret2
-  delete state.secret3
-  delete state.a_bob
-  delete state.b_alice
-  delete state.local.kx_sk
+  state.shash = null
+  state.secret2 = null
+  state.secret3 = null
+  state.a_bob = null
+  state.b_alice = null
+  state.local.kx_sk = null
   return state
 }
 
 //client side only (Alice)
 
-exports.clientVerifyChallenge = function (challenge) {
-
-  var state = this
-  state = exports.verifyChallenge.call(state, challenge)
+exports.clientVerifyChallenge = function (state, challenge) {
+  state = exports.verifyChallenge(state, challenge)
   if(!state) return null
 
-    //now we have agreed on the secret.
+  //now we have agreed on the secret.
   //this can be an encryption secret,
   //or a hmac secret.
 
-  // shared(local.kx, remote.public)
-  var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+  var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.publicKey))
   state.a_bob = a_bob
   state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
 
-  var signed = concat([state.app_key, state.remote.public, state.shash])
-  var sig = sign(signed, state.local.secret)
+  var signed = concat([state.app_key, state.remote.publicKey, state.shash])
+  var sig = sign(signed, state.local.secretKey)
 
-  state.local.hello = Buffer.concat([sig, state.local.public])
+  state.local.hello = Buffer.concat([sig, state.local.publicKey])
 
   return state
 }
 
-exports.clientCreateAuth = function () {
-  var state = this
+exports.clientCreateAuth = function (state) {
   return box(state.local.hello, nonce, state.secret2)
 }
 
-exports.clientVerifyAccept = function (boxed_okay) {
-  var state = this
+exports.clientVerifyAccept = function (state, boxed_okay) {
 
-  var b_alice = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+  var b_alice = shared(curvify_sk(state.local.secretKey), state.remote.kx_pk)
   state.b_alice = b_alice
 //  state.secret3 = hash(concat([state.secret2, b_alice]))
   state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
@@ -141,18 +130,16 @@ exports.clientVerifyAccept = function (boxed_okay) {
   var sig = unbox(boxed_okay, nonce, state.secret3)
   if(!sig) return null
   var signed = concat([state.app_key, state.local.hello, state.shash])
-  if(!verify(sig, signed, state.remote.public))
+  if(!verify(sig, signed, state.remote.publicKey))
       return null
   return state
 }
 
 //server side only (Bob)
 
-exports.serverVerifyAuth = function (data) {
+exports.serverVerifyAuth = function (state, data) {
 
-  var state = this
-
-  var a_bob = shared(curvify_sk(state.local.secret), state.remote.kx_pk)
+  var a_bob = shared(curvify_sk(state.local.secretKey), state.remote.kx_pk)
   state.a_bob = a_bob
   state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
 
@@ -163,13 +150,13 @@ exports.serverVerifyAuth = function (data) {
   var sig = state.remote.hello.slice(0, 64)
   var public = state.remote.hello.slice(64, client_auth_length)
 
-  var signed = concat([state.app_key, state.local.public, state.shash])
+  var signed = concat([state.app_key, state.local.publicKey, state.shash])
   if(!verify(sig, signed, public))
     return null
 
-  state.remote.public = public
+  state.remote.publicKey = public
   //shared key between my local ephemeral key + remote public
-  var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.public))
+  var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.publicKey))
   state.b_alice = b_alice
   state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
 
@@ -177,12 +164,10 @@ exports.serverVerifyAuth = function (data) {
 
 }
 
-exports.serverCreateAccept = function () {
-  var state = this
+exports.serverCreateAccept = function (state) {
   var signed = concat([state.app_key, state.remote.hello, state.shash])
-  var okay = sign(signed, state.local.secret)
+  var okay = sign(signed, state.local.secretKey)
   return box(okay, nonce, state.secret3)
-
 }
 
 
