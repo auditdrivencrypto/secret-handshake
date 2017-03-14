@@ -17,6 +17,8 @@ var concat = Buffer.concat
 
 var nonce = new Buffer(24); nonce.fill(0)
 
+var isBuffer = Buffer.isBuffer
+
 exports.challenge_length = 64
 exports.client_auth_length = 16+32+64
 exports.server_auth_length = 16+64
@@ -173,4 +175,9 @@ exports.serverCreateAccept = function (state) {
   return box(okay, nonce, state.secret3)
 }
 
+exports.toKeys = function (keys) {
+  if(isBuffer(keys, 32))
+    return sodium.crypto_sign_seed_keypair(keys)
+  return keys
+}
 

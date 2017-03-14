@@ -1,14 +1,17 @@
 var pull = require('pull-stream')
+var boxes = require('pull-box-stream')
 
 var Handshake = require('pull-handshake')
-var stateless = require('./stateless')
 var crypto = require('crypto')
+
+function isBuffer(buf, len) {
+  return Buffer.isBuffer(buf) && buf.length === len
+}
 
 module.exports = function (stateless) {
   var exports = {}
   //client is Alice
   //create the client stream with the public key you expect to connect to.
-  exports.client =
   exports.createClientStream = function (alice, app_key, timeout) {
 
     return function (bob_pub, seed, cb) {
@@ -58,7 +61,6 @@ module.exports = function (stateless) {
   }
 
   //server is Bob.
-  exports.server =
   exports.createServerStream = function (bob, authorize, app_key, timeout) {
 
     return function (cb) {
@@ -102,6 +104,59 @@ module.exports = function (stateless) {
       return stream
     }
   }
+
+  //wrap the above into an actual handshake + encrypted session
+
+  exports.toKeys = stateless.toKeys
+
+  function secure (cb) {
+    return function (err, stream, state) {
+      if(err) return cb(err)
+
+      var en_nonce = state.remote.app_mac.slice(0, 24)
+      var de_nonce = state.local.app_mac.slice(0, 24)
+
+      cb(null, {
+        remote: state.remote.publicKey,
+        //on the server, attach any metadata gathered
+        //during `authorize` call
+        auth: state.auth,
+        source: pull(
+          stream.source,
+          boxes.createUnboxStream(state.decryptKey, de_nonce)
+        ),
+        sink: pull(
+          boxes.createBoxStream(state.encryptKey, en_nonce),
+          stream.sink
+        )
+      })
+    }
+  }
+
+  exports.client =
+  exports.createClient = function (alice, app_key, timeout) {
+    var create = exports.createClientStream(alice, app_key, timeout)
+
+    return function (bob, seed, cb) {
+      if(!isBuffer(bob, 32))
+        throw new Error('createClient *must* be passed a public key')
+      if('function' === typeof seed)
+        return create(bob, secure(seed))
+      else
+        return create(bob, seed, secure(cb))
+    }
+  }
+
+  exports.server =
+  exports.createServer = function (bob, authorize, app_key, timeout) {
+    var create = exports.createServerStream(bob, authorize, app_key, timeout)
+
+    return function (cb) {
+      return create(secure(cb))
+    }
+  }
+
   return exports
 }
+
 
