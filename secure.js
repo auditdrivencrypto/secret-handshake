@@ -28,8 +28,4 @@ module.exports = function (cb) {
       )
     })
   }
-
 }
-
-
-

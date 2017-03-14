@@ -1,4 +1,4 @@
-var handshake = require('./handshake')
+var handshake = require('./inject')(require('./stateless'))
 var secure = require('./secure')
 var cl = require('chloride')
 

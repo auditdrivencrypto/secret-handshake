@@ -17,10 +17,10 @@ var concat = Buffer.concat
 
 var nonce = new Buffer(24); nonce.fill(0)
 
-var challenge_length = 64
-var client_auth_length = 16+32+64
-var server_auth_length = 16+64
-var mac_length = 16
+exports.challenge_length = 64
+exports.client_auth_length = 16+32+64
+exports.server_auth_length = 16+64
+exports.mac_length = 16
 
 //both client and server
 
@@ -58,7 +58,7 @@ exports.createChallenge = function (state) {
 
 exports.verifyChallenge = function (state, challenge) {
   var mac = challenge.slice(0, 32)
-  var remote_pk = challenge.slice(32, challenge.length)
+  var remote_pk = challenge.slice(32, exports.challenge_length)
   if(0 !== verify_auth(mac, remote_pk, state.app_key))
     return null
 
@@ -151,7 +151,7 @@ exports.serverVerifyAuth = function (state, data) {
     return null
 
   var sig = state.remote.hello.slice(0, 64)
-  var public = state.remote.hello.slice(64, client_auth_length)
+  var public = state.remote.hello.slice(64, exports.client_auth_length)
 
   var signed = concat([state.app_key, state.local.publicKey, state.shash])
   if(!verify(sig, signed, public))
@@ -172,4 +172,5 @@ exports.serverCreateAccept = function (state) {
   var okay = sign(signed, state.local.secretKey)
   return box(okay, nonce, state.secret3)
 }
+
 
