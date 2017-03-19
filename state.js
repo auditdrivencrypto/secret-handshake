@@ -108,13 +108,13 @@ function verifyClientAuth (data) {
     return null
 
   var sig = state.remote.hello.slice(0, 64)
-  var public = state.remote.hello.slice(64, client_auth_length)
+  var publicKey = state.remote.hello.slice(64, client_auth_length)
 
   var signed = concat([state.app_key, state.local.public, state.shash])
-  if(!verify(sig, signed, public))
+  if(!verify(sig, signed, publicKey))
     return null
 
-  state.remote.public = public
+  state.remote.public = publicKey
 
   return true
 }
