@@ -15,11 +15,12 @@
     "pull-stream": "^3.4.5"
   },
   "devDependencies": {
-    "pull-defer": "^0.2.2",
     "pull-bitflipper": "~0.1.0",
+    "pull-defer": "^0.2.2",
     "pull-hang": "0.0.0",
     "stream-to-pull-stream": "~1.6.1",
-    "tape": "~4.0.0"
+    "tape": "~4.0.0",
+    "test-secret-handshake": "^1.0.0"
   },
   "scripts": {
     "prepublish": "npm ls &&  npm test",
