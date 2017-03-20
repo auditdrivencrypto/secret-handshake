@@ -2,7 +2,7 @@ var pull = require('pull-stream')
 var boxes = require('pull-box-stream')
 
 var Handshake = require('pull-handshake')
-var crypto = require('crypto')
+var random = require('./random')
 
 function isBuffer(buf, len) {
   return Buffer.isBuffer(buf) && buf.length === len
@@ -24,7 +24,7 @@ module.exports = function (stateless) {
         local: alice,
         remote: {publicKey: bob_pub},
         seed: seed,
-        random: crypto.randomBytes(32)
+        random: random(32)
       })
 
       var stream = Handshake({timeout: timeout}, cb)
@@ -68,7 +68,7 @@ module.exports = function (stateless) {
         app_key: app_key,
         local: bob,
         //note, the server doesn't know the remote until it receives ClientAuth
-        random: crypto.randomBytes(32)
+        random: random(32)
       })
       var stream = Handshake({timeout: timeout}, cb)
 
