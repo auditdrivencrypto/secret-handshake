@@ -1,3 +1,4 @@
+'use strict'
 var sodium      = require('chloride')
 
 var keypair     = sodium.crypto_box_seed_keypair
@@ -117,7 +118,6 @@ exports.clientVerifyChallenge = function (state, challenge) {
   var sig = sign(signed, state.local.secretKey)
 
   state.local.hello = Buffer.concat([sig, state.local.publicKey])
-
   return state
 }
 
@@ -153,13 +153,13 @@ exports.serverVerifyAuth = function (state, data) {
     return null
 
   var sig = state.remote.hello.slice(0, 64)
-  var public = state.remote.hello.slice(64, exports.client_auth_length)
+  var publicKey = state.remote.hello.slice(64, exports.client_auth_length)
 
   var signed = concat([state.app_key, state.local.publicKey, state.shash])
-  if(!verify(sig, signed, public))
+  if(!verify(sig, signed, publicKey))
     return null
 
-  state.remote.publicKey = public
+  state.remote.publicKey = publicKey
   //shared key between my local ephemeral key + remote public
   var b_alice = shared(state.local.kx_sk, curvify_pk(state.remote.publicKey))
   state.b_alice = b_alice
@@ -180,4 +180,6 @@ exports.toKeys = function (keys) {
     return sodium.crypto_sign_seed_keypair(keys)
   return keys
 }
+
+
 

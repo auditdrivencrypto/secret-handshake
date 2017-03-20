@@ -1,3 +1,4 @@
+'use strict'
 var cl = require('chloride')
 
 module.exports = function (bytes) {
