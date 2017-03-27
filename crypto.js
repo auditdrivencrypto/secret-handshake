@@ -27,6 +27,11 @@ exports.mac_length = 16
 
 //both client and server
 
+function assert_length(buf, name, length) {
+  if(buf.length !== length)
+    throw new Error('expected '+name+' to have length' + length + ', but was:'+buf.length)
+}
+
 exports.initialize = function (state) {
 
   if(state.seed) state.local = from_seed(state.seed)
@@ -60,6 +65,8 @@ exports.createChallenge = function (state) {
 
 
 exports.verifyChallenge = function (state, challenge) {
+  assert_length(challenge, 'challenge', exports.challenge_length)
+
   var mac = challenge.slice(0, 32)
   var remote_pk = challenge.slice(32, exports.challenge_length)
   if(0 !== verify_auth(mac, remote_pk, state.app_key))
@@ -126,10 +133,10 @@ exports.clientCreateAuth = function (state) {
 }
 
 exports.clientVerifyAccept = function (state, boxed_okay) {
+  assert_length(boxed_okay, 'server_auth', exports.server_auth_length)
 
   var b_alice = shared(curvify_sk(state.local.secretKey), state.remote.kx_pk)
   state.b_alice = b_alice
-//  state.secret3 = hash(concat([state.secret2, b_alice]))
   state.secret3 = hash(concat([state.app_key, state.secret, state.a_bob, state.b_alice]))
 
   var sig = unbox(boxed_okay, nonce, state.secret3)
@@ -143,6 +150,7 @@ exports.clientVerifyAccept = function (state, boxed_okay) {
 //server side only (Bob)
 
 exports.serverVerifyAuth = function (state, data) {
+  assert_length(data, 'client_auth', exports.client_auth_length)
 
   var a_bob = shared(curvify_sk(state.local.secretKey), state.remote.kx_pk)
   state.a_bob = a_bob
@@ -180,6 +188,3 @@ exports.toKeys = function (keys) {
     return sodium.crypto_sign_seed_keypair(keys)
   return keys
 }
-
-
-

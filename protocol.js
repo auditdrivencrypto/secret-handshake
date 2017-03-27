@@ -46,7 +46,7 @@ module.exports = function (stateless) {
 
         shake.write(stateless.clientCreateAuth(state))
 
-        shake.read(exports.server_auth_length, function (err, boxed_sig) {
+        shake.read(stateless.server_auth_length, function (err, boxed_sig) {
           if(err) return abort(err, 'hello not accepted')
 
           if(!(state = stateless.clientVerifyAccept(state, boxed_sig)))
@@ -88,6 +88,7 @@ module.exports = function (stateless) {
         shake.write(stateless.createChallenge(state))
         shake.read(exports.client_auth_length, function (err, hello) {
           if(err) return abort(err, 'expected hello')
+
           if(!(state = stateless.serverVerifyAuth(state, hello)))
             return abort(null, 'wrong number')
 
@@ -158,5 +159,4 @@ module.exports = function (stateless) {
 
   return exports
 }
-
 
