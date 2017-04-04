@@ -69,6 +69,7 @@ exports.verifyChallenge = function (state, challenge) {
 
   var mac = challenge.slice(0, 32)
   var remote_pk = challenge.slice(32, exports.challenge_length)
+
   if(0 !== verify_auth(mac, remote_pk, state.app_key))
     return null
 
@@ -110,6 +111,7 @@ exports.clean = function (state) {
 //client side only (Alice)
 
 exports.clientVerifyChallenge = function (state, challenge) {
+  assert_length(challenge, 'challenge', exports.challenge_length)
   state = exports.verifyChallenge(state, challenge)
   if(!state) return null
 
@@ -188,3 +190,4 @@ exports.toKeys = function (keys) {
     return sodium.crypto_sign_seed_keypair(keys)
   return keys
 }
+
