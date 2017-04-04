@@ -38,7 +38,7 @@ module.exports = function (stateless) {
 
       shake.write(stateless.createChallenge(state))
 
-      shake.read(exports.challenge_length, function (err, msg) {
+      shake.read(stateless.challenge_length, function (err, msg) {
         if(err) return abort(err, 'challenge not accepted')
         //create the challenge first, because we need to generate a local key
         if(!(state = stateless.clientVerifyChallenge(state, msg)))
@@ -80,13 +80,13 @@ module.exports = function (stateless) {
         else                    shake.abort(new Error(reason), cb)
       }
 
-      shake.read(exports.challenge_length, function (err, challenge) {
+      shake.read(stateless.challenge_length, function (err, challenge) {
         if(err) return abort(err, 'expected challenge')
         if(!(state = stateless.verifyChallenge(state, challenge)))
           return shake.abort(new Error('wrong protocol/version'))
 
         shake.write(stateless.createChallenge(state))
-        shake.read(exports.client_auth_length, function (err, hello) {
+        shake.read(stateless.client_auth_length, function (err, hello) {
           if(err) return abort(err, 'expected hello')
 
           if(!(state = stateless.serverVerifyAuth(state, hello)))
