@@ -51,9 +51,6 @@ exports.initialize = function (state) {
     app_mac: auth(kx_pk, state.app_key)
   }
 
-  state.local.kx_pk = kx_pk
-  state.local.kx_sk = kx_sk
-  state.local.app_mac = auth(kx_pk, state.app_key)
   state.remote = state.remote || {}
 
   return state
@@ -190,4 +187,5 @@ exports.toKeys = function (keys) {
     return sodium.crypto_sign_seed_keypair(keys)
   return keys
 }
+
 
