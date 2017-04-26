@@ -183,9 +183,5 @@ exports.serverCreateAccept = function (state) {
 }
 
 exports.toKeys = function (keys) {
-  if(isBuffer(keys, 32))
-    return sodium.crypto_sign_seed_keypair(keys)
-  return keys
+  return (isBuffer(keys, 32)) ? from_seed(keys) : keys
 }
-
-
