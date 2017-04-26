@@ -96,12 +96,12 @@ exports.clean = function (state) {
   state.secret3.fill(0)
   state.local.kx_sk.fill(0)
 
-  state.shash = null
-  state.secret2 = null
-  state.secret3 = null
-  state.a_bob = null
-  state.b_alice = null
-  state.local.kx_sk = null
+  delete state.shash
+  delete state.secret2
+  delete state.secret3
+  delete state.a_bob
+  delete state.b_alice
+  delete state.local.kx_sk
   return state
 }
 
