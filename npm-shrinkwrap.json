@@ -112,9 +112,9 @@
       "resolved": "https://registry.npmjs.org/chalk/-/chalk-1.1.3.tgz"
     },
     "chloride": {
-      "version": "2.2.4",
+      "version": "2.2.6",
       "from": "chloride@>=2.0.1 <3.0.0",
-      "resolved": "https://registry.npmjs.org/chloride/-/chloride-2.2.4.tgz"
+      "resolved": "https://registry.npmjs.org/chloride/-/chloride-2.2.6.tgz"
     },
     "chloride-test": {
       "version": "1.1.1",
