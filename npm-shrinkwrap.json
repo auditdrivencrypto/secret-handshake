@@ -1,6 +1,6 @@
 {
   "name": "secret-handshake",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "dependencies": {
     "abbrev": {
       "version": "1.0.9",
