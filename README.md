@@ -9,6 +9,7 @@ For a full explaination of the design, read the
 
 * javascript/node.js this repo.
 * go [cryptix/secretstream](https://github.com/cryptix/secretstream/)
+* rust [AljoschaMeyer/secret-handshake-rs](https://github.com/AljoschaMeyer/secret-handshake-rs)
 * python/twisted [david415/txsecrethandshake](https://github.com/david415/txsecrethandshake) (WIP)
 * C++ [Kodest/cppshs](https://github.com/Kodest/cppshs) (WIP)
 * also [keks/tamarin-shs](https://github.com/keks/tamarin-shs) is a formal proof of the cryptographic properties!
