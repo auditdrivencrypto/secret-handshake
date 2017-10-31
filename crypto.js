@@ -160,7 +160,7 @@ exports.serverVerifyAuth = function (state, data) {
     return null
 
   var sig = state.remote.hello.slice(0, 64)
-  var publicKey = state.remote.hello.slice(64, exports.client_auth_length)
+  var publicKey = state.remote.hello.slice(64, 96)
 
   var signed = concat([state.app_key, state.local.publicKey, state.shash])
   if(!verify(sig, signed, publicKey))
