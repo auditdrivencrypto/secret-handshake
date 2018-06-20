@@ -2,7 +2,7 @@
 
 secure-channel based on a a mutually authenticating key agreement handshake, with forward secure identity metadata.
 
-For a full explaination of the design, read the
+For a full explanation of the design, read the
 [Design Paper](http://dominictarr.github.io/secret-handshake-paper/shs.pdf)
 
 ## Implementations
