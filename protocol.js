@@ -110,7 +110,7 @@ module.exports = function (stateless) {
 
   exports.toKeys = stateless.toKeys
 
-  function secure (cb) {
+  function secure (cb, disableEncryption) {
     return function (err, stream, state) {
       if(err) return cb(err)
 
@@ -122,11 +122,11 @@ module.exports = function (stateless) {
         //on the server, attach any metadata gathered
         //during `authorize` call
         auth: state.auth,
-        source: pull(
+        source: disableEncryption ? stream.source : pull(
           stream.source,
           boxes.createUnboxStream(state.decryptKey, de_nonce)
         ),
-        sink: pull(
+        sink: disableEncryption ? stream.sink : pull(
           boxes.createBoxStream(state.encryptKey, en_nonce),
           stream.sink
         )
@@ -135,25 +135,25 @@ module.exports = function (stateless) {
   }
 
   exports.client =
-  exports.createClient = function (alice, app_key, timeout) {
+  exports.createClient = function (alice, app_key, timeout, disableEncryption) {
     var create = exports.createClientStream(alice, app_key, timeout)
 
     return function (bob, seed, cb) {
       if(!isBuffer(bob, 32))
         throw new Error('createClient *must* be passed a public key')
       if('function' === typeof seed)
-        return create(bob, secure(seed))
+        return create(bob, secure(seed, disableEncryption))
       else
-        return create(bob, seed, secure(cb))
+        return create(bob, seed, secure(cb, disableEncryption))
     }
   }
 
   exports.server =
-  exports.createServer = function (bob, authorize, app_key, timeout) {
+  exports.createServer = function (bob, authorize, app_key, timeout, disableEncryption) {
     var create = exports.createServerStream(bob, authorize, app_key, timeout)
 
     return function (cb) {
-      return create(secure(cb))
+      return create(secure(cb, disableEncryption))
     }
   }
 
