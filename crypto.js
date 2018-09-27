@@ -115,8 +115,9 @@ exports.clientVerifyChallenge = function (state, challenge) {
   //now we have agreed on the secret.
   //this can be an encryption secret,
   //or a hmac secret.
-
-  var a_bob = shared(state.local.kx_sk, curvify_pk(state.remote.publicKey))
+  var curve = curvify_pk(state.remote.publicKey)
+  if(!curve) return null
+  var a_bob = shared(state.local.kx_sk, curve)
   state.a_bob = a_bob
   state.secret2 = hash(concat([state.app_key, state.secret, a_bob]))
 
@@ -187,5 +188,7 @@ exports.toKeys = function (keys) {
     return sodium.crypto_sign_seed_keypair(keys)
   return keys
 }
+
+
 
 
