@@ -166,7 +166,10 @@ tape('test error cb when client is not authorized', function (t) {
 tape('test error cb when client get wrong number', function (t) {
   var errs = 0
   var aliceHS = shs.client(alice, app_key, 100)
-    (wally.publicKey, function (err) {
+    (
+//    require('crypto').randomBytes(32)
+    wally.publicKey
+    , function (err) {
       t.ok(err, 'Bob hungup')
       if(++errs === 2) t.end()
     })
@@ -174,6 +177,27 @@ tape('test error cb when client get wrong number', function (t) {
   var bobHS = shs.server(bob, unauthorized, app_key, 100)
       (function (err) {
         t.ok(err, 'client unauthorized')
+        if(++errs === 2) t.end()
+      })
+
+  pull(aliceHS, bobHS, aliceHS)
+})
+
+tape('test error cb when client get wrong number', function (t) {
+  var errs = 0
+  var aliceHS = shs.client(alice, app_key, 100)
+    (
+    require('crypto').randomBytes(32)
+//    wally.publicKey
+    , function (err) {
+      t.ok(err, 'connection failed')
+      if(++errs === 2) t.end()
+    })
+
+  var bobHS = shs.server(bob, unauthorized, app_key, 100)
+      (function (err) {
+        console.log(err)
+        t.ok(err)
         if(++errs === 2) t.end()
       })
 
@@ -281,5 +305,8 @@ tape('toKeys', function (t) {
   t.deepEqual(shs.toKeys(alice), alice)
   t.end()
 })
+
+
+
 
 
