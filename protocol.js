@@ -1,6 +1,7 @@
 var pull = require('pull-stream')
 var boxes = require('pull-box-stream')
-
+var explain = require('explain-error')
+var errors = require('./errors')
 var Handshake = require('pull-handshake')
 var random = require('./random')
 
@@ -39,18 +40,18 @@ module.exports = function (stateless) {
       shake.write(stateless.createChallenge(state))
 
       shake.read(stateless.challenge_length, function (err, msg) {
-        if(err) return abort(err, 'challenge not accepted')
+        if(err) return abort(err, errors.serverErrorOnChallenge)
         //create the challenge first, because we need to generate a local key
         if(!(state = stateless.clientVerifyChallenge(state, msg)))
-          return abort(null, 'wrong protocol (version?)')
+          return abort(null, errors.serverInvalidChallenge)
 
         shake.write(stateless.clientCreateAuth(state))
 
         shake.read(stateless.server_auth_length, function (err, boxed_sig) {
-          if(err) return abort(err, 'hello not accepted')
+          if(err) return abort(err, errors.serverHungUp)
 
           if(!(state = stateless.clientVerifyAccept(state, boxed_sig)))
-            return abort(null, 'server not authenticated')
+            return abort(null, errors.serverAcceptInvalid)
 
           cb(null, shake.rest(), state = stateless.clean(state))
         })
@@ -81,21 +82,21 @@ module.exports = function (stateless) {
       }
 
       shake.read(stateless.challenge_length, function (err, challenge) {
-        if(err) return abort(err, 'expected challenge')
+        if(err) return abort(err, errors.clientErrorOnChallenge)
         if(!(state = stateless.verifyChallenge(state, challenge)))
-          return shake.abort(new Error('wrong protocol/version'))
+          return shake.abort(new Error(errors.clientInvalidChallenge))
 
         shake.write(stateless.createChallenge(state))
         shake.read(stateless.client_auth_length, function (err, hello) {
-          if(err) return abort(err, 'expected hello')
+          if(err) return abort(err, errors.clientErrorOnHello)
 
           if(!(state = stateless.serverVerifyAuth(state, hello)))
-            return abort(null, 'wrong number')
+            return abort(null, errors.clientInvalidHello)
 
           //check if the user wants to speak to alice.
           authorize(state.remote.publicKey, function (err, auth) {
-            if(auth == null && !err) err = new Error('client unauthorized')
-            if(!auth) return abort(err, 'client authentication rejected')
+            if(err) return abort(err, errors.serverErrorOnAuthorization)
+            if(!auth) return abort(null, errors.clientUnauthorized)
             state.auth = auth
             shake.write(stateless.serverCreateAccept(state))
             cb(null, shake.rest(), state = stateless.clean(state))
