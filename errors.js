@@ -3,7 +3,7 @@
 // 2 server sends challenge
 // 3 client sends hello (include proof they know the server)
 // 4 server decides if they want client to connect with them
-// 4 server sends acknowledgement to client
+// 5 server sends acknowledgement to client
 
 module.exports = {
   serverErrorOnChallenge:
