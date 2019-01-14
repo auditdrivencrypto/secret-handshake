@@ -1,3 +1,4 @@
+'use strict'
 var pull = require('pull-stream')
 var boxes = require('pull-box-stream')
 var explain = require('explain-error')
@@ -33,7 +34,7 @@ module.exports = function (stateless) {
       stream.handshake = null
 
       function abort(err, reason) {
-        if(err && err !== true) shake.abort(err, cb)
+        if(err && err !== true) shake.abort(explain(err, reason), cb)
         else                    shake.abort(new Error(reason), cb)
       }
 
