@@ -9,19 +9,17 @@
   },
   "dependencies": {
     "chloride": "^2.2.8",
-    "deep-equal": "~1.0.0",
     "explain-error": "^1.0.4",
     "pull-box-stream": "^1.0.13",
     "pull-handshake": "^1.1.1",
-    "pull-stream": "^3.4.5",
-    "sodium-native": "^1.10.3"
+    "pull-stream": "^3.4.5"
   },
   "devDependencies": {
     "pull-bitflipper": "~0.1.0",
     "pull-defer": "^0.2.2",
     "pull-hang": "0.0.0",
-    "stream-to-pull-stream": "~1.6.1",
-    "tape": "~4.0.0",
+    "stream-to-pull-stream": "^1.7.3",
+    "tape": "^4.10.1",
     "test-secret-handshake": "^1.0.0"
   },
   "scripts": {
