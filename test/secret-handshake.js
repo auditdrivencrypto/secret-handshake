@@ -10,7 +10,7 @@ var bitflipper = require('pull-bitflipper')
 var Hang = require('pull-hang')
 
 function hash (str) {
-  return cl.crypto_hash_sha256(new Buffer(str))
+  return cl.crypto_hash_sha256(Buffer.from(str))
 }
 
 var alice = cl.crypto_sign_seed_keypair(hash('alice'))
@@ -37,7 +37,7 @@ tape('test handshake', function (t) {
       if(err) throw err
 
       pull(
-        pull.values([new Buffer('hello there')]),
+        pull.values([Buffer.from('hello there')]),
         stream,
         pull.collect(function (err, hello_there) {
           t.equal(hello_there.toString(), 'hello there')

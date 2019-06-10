@@ -6,7 +6,7 @@ var tape = require('tape')
 
 var cl = require('chloride')
 function hash (str) {
-  return cl.crypto_hash_sha256(new Buffer(str))
+  return cl.crypto_hash_sha256(Buffer.from(str))
 }
 
 var alice = cl.crypto_sign_seed_keypair(hash('alice'))
@@ -51,11 +51,11 @@ tape('test with net', function (t) {
       createClient(bob.publicKey, function (err, stream) {
         console.log('client connected', err, stream)
         pull(
-          pull.values([new Buffer('HELLO')]),
+          pull.values([Buffer.from('HELLO')]),
           stream,
           pull.collect(function (err, data) {
             t.notOk(err)
-            t.deepEqual(Buffer.concat(data), new Buffer('HELLO'))
+            t.deepEqual(Buffer.concat(data), Buffer.from('HELLO'))
             server.close()
             t.end()
           })

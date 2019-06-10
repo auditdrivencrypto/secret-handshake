@@ -2,7 +2,7 @@
 var cl = require('chloride')
 
 module.exports = function (bytes) {
-  var b = new Buffer(bytes)
+  var b = Buffer.alloc(bytes)
   cl.randombytes(b, bytes)
   return b
 }
