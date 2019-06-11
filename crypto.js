@@ -1,7 +1,6 @@
 'use strict'
 var sodium      = require('chloride')
 
-var keypair     = sodium.crypto_box_seed_keypair
 var from_seed   = sodium.crypto_sign_seed_keypair
 var shared      = sodium.crypto_scalarmult
 var hash        = sodium.crypto_hash_sha256
@@ -16,7 +15,7 @@ var unbox       = sodium.crypto_secretbox_open_easy
 
 var concat = Buffer.concat
 
-var nonce = new Buffer(24); nonce.fill(0)
+var nonce = Buffer.alloc(24); nonce.fill(0)
 
 var isBuffer = Buffer.isBuffer
 
