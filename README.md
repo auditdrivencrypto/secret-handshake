@@ -12,6 +12,7 @@ For a full explanation of the design, read the
 * rust [AljoschaMeyer/secret-handshake-rs](https://github.com/AljoschaMeyer/secret-handshake-rs)
 * c [AljoschaMeyer/shs1-c](https://github.com/AljoschaMeyer/shs1-c) (actually just implements the crypto, not the protocol used as a component in the rust implementation)
 * python/twisted [david415/txsecrethandshake](https://github.com/david415/txsecrethandshake) (WIP)
+* C [Kodest/cshs](https://github.com/Kodest/cshs)
 * C++ [Kodest/cppshs](https://github.com/Kodest/cppshs) (WIP)
 * also [keks/tamarin-shs](https://github.com/keks/tamarin-shs) is a formal proof of the cryptographic properties!
 
