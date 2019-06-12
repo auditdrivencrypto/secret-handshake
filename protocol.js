@@ -161,4 +161,3 @@ module.exports = function (stateless) {
 
   return exports
 }
-

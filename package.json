@@ -18,13 +18,15 @@
     "pull-bitflipper": "~0.1.0",
     "pull-defer": "^0.2.2",
     "pull-hang": "0.0.0",
+    "shs1-test": "^1.1.0",
     "stream-to-pull-stream": "^1.7.3",
     "tape": "^4.10.1",
     "test-secret-handshake": "^1.0.0"
   },
   "scripts": {
     "prepublishOnly": "npm ls &&  npm test",
-    "test": "set -e; for t in test/*.js; do node $t; done"
+    "test": "set -e; for t in test/*.js; do node $t; done",
+    "test:shs1-test": "shs1testserver test/shs1-test/server.js"
   },
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
