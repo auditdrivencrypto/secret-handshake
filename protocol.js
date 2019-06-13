@@ -78,8 +78,9 @@ module.exports = function (stateless) {
       stream.handshake = null
 
       function abort (err, reason) {
-        if(err && err !== true) shake.abort(err, cb)
-        else                    shake.abort(new Error(reason), cb)
+        if(err && err !== true) shake.abort(err)
+        else                    shake.abort(new Error(reason))
+        // shake.abort(err) triggers cb(err)
       }
 
       shake.read(stateless.challenge_length, function (err, challenge) {
@@ -116,20 +117,26 @@ module.exports = function (stateless) {
     return function (err, stream, state) {
       if(err) return cb(err)
 
-      var en_nonce = state.remote.app_mac.slice(0, 24)
-      var de_nonce = state.local.app_mac.slice(0, 24)
+      var encryptNonce = state.remote.app_mac.slice(0, 24)
+      var decryptNonce = state.local.app_mac.slice(0, 24)
 
       cb(null, {
         remote: state.remote.publicKey,
         //on the server, attach any metadata gathered
         //during `authorize` call
         auth: state.auth,
+        crypto: {
+          encryptKey: state.encryptKey,
+          decryptKey: state.decryptKey,
+          encryptNonce: encryptNonce,
+          decryptNonce: decryptNonce
+        },
         source: pull(
           stream.source,
-          boxes.createUnboxStream(state.decryptKey, de_nonce)
+          boxes.createUnboxStream(state.decryptKey, decryptNonce)
         ),
         sink: pull(
-          boxes.createBoxStream(state.encryptKey, en_nonce),
+          boxes.createBoxStream(state.encryptKey, encryptNonce),
           stream.sink
         )
       })

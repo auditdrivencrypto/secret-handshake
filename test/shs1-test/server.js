@@ -2,7 +2,7 @@
 
 const pull = require('pull-stream')
 const toPull = require('stream-to-pull-stream')
-const { createServerStream } = require('../..')
+const { createServer } = require('../..')
 
 const appKey = Buffer.from(process.argv[2], 'hex')
 const bob = { // the keypair of the server
@@ -12,24 +12,34 @@ const bob = { // the keypair of the server
 const authorize = (pubKey, cb) => cb(null, true) // all clients are allowed to connect
 const timeout = 30 // I hope this is milliseconds?
 
-const ServerStream = createServerStream(bob, authorize, appKey, timeout) // duplex handshake stream
-var d = Date.now()
-const stream = ServerStream((err, plainStream) => {
-  if (err) process.stderr.write(`X ${d} ERROR ${err}\n`)
-  else process.stderr.write(`0 ${d} DONE\n`)
+const shake = createServer(bob, authorize, appKey, timeout)((err, stream) => {
+  if (err) {
+    log(`! ${err}`)
+    // shs1-test : If the server detects that the client is not well-behaved, it must immediately exit with a non-zero exit code, without writing any further data to stdout.
+    process.exit(1)
+  } else {
+    const { encryptKey, decryptKey, encryptNonce, decryptNonce } = stream.crypto
+    const result = Buffer.concat([ encryptKey, encryptNonce, decryptKey, decryptNonce ])
+    log(`< writing ${result.length} bytes (final)`)
+    process.stdout.write(result)
 
-  process.kill(process.pid)
-  // is this sufficient to kill this process? are the streams closed?
+    // process.kill(process.pid)
+  }
 })
 
 process.on('SIGTERM', () => {
-  process.stderr.write(`X ${d} received SIGTERM\n`) // triggered by process.kill above
+  log('X received SIGTERM')
 })
 
 pull(
   toPull.source(process.stdin),
-  pull.through(data => process.stderr.write(`> ${d}\n`)),
-  stream,
-  pull.through(data => process.stderr.write(`< ${d}\n`)),
+  pull.through(data => log(`> reading ${data.length} bytes`)),
+  shake, // duplex handshake stream
+  pull.through(data => log(`< writing ${data.length} bytes`)),
   toPull.sink(process.stdout)
 )
+
+function log (string) {
+  // uncomment this to get some debugging data
+  process.stderr.write(`PID ${process.pid}: ${string}\n`)
+}
