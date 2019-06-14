@@ -7,6 +7,14 @@
     "type": "git",
     "url": "git://github.com/dominictarr/secret-handshake.git"
   },
+  "scripts": {
+    "prepublishOnly": "npm ls &&  npm test",
+    "test": "npm-run-all test:original test:shs1-test",
+    "test:original": "set -e; for t in test/*.js; do node $t; done",
+    "test:shs1-test": "npm-run-all test:shs1-test:*",
+    "test:shs1-test:server": "shs1testserver test/shs1-test/server.js",
+    "test:shs1-test:client": "shs1testclient test/shs1-test/client.js"
+  },
   "dependencies": {
     "chloride": "^2.2.8",
     "explain-error": "^1.0.4",
@@ -15,6 +23,7 @@
     "pull-stream": "^3.4.5"
   },
   "devDependencies": {
+    "npm-run-all": "^4.1.5",
     "pull-bitflipper": "~0.1.0",
     "pull-defer": "^0.2.2",
     "pull-hang": "0.0.0",
@@ -22,11 +31,6 @@
     "stream-to-pull-stream": "^1.7.3",
     "tape": "^4.10.1",
     "test-secret-handshake": "^1.0.0"
-  },
-  "scripts": {
-    "prepublishOnly": "npm ls &&  npm test",
-    "test": "set -e; for t in test/*.js; do node $t; done",
-    "test:shs1-test": "shs1testserver test/shs1-test/server.js"
   },
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"

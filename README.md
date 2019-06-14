@@ -101,7 +101,7 @@ If you're interested in the protocol, you can read more here : https://ssbc.gith
 ### createClient(keypair, authorize, appkey, timeout) => createClientStream(key, seed?, cb(err, plainstream)) => cipherstream
 
 `createClient` takes: 
-- `keypair` - a keypair of form `{ secretKey, publicKey }` (see `chloride#crypto_sign_keypair`)
+- `keypair` - a keypair of form `{ secretKey, publicKey }` - your clients keys (see `chloride#crypto_sign_keypair`)
 - `appkey` - the network identifier, 32 random bytes
 - `timeout` - an integer (in milliseconds? CHECK THIS)
 

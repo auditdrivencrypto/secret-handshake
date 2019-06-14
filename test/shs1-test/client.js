@@ -2,17 +2,17 @@
 
 const pull = require('pull-stream')
 const toPull = require('stream-to-pull-stream')
-const { createServer } = require('../..')
+var sodium = require('chloride')
+const { createClient } = require('../..')
 
+const alice = sodium.crypto_sign_keypair() // client
 const appKey = Buffer.from(process.argv[2], 'hex')
-const bob = { // the keypair of the server
-  secretKey: Buffer.from(process.argv[3], 'hex'),
-  publicKey: Buffer.from(process.argv[4], 'hex')
-}
-const authorize = (pubKey, cb) => cb(null, true) // all clients are allowed to connect
+const bobPublicKey = Buffer.from(process.argv[3], 'hex') // server
+const seed = null // how do we get this fro shs1testclient ?
+
 const timeout = 1e3 // I hope this is milliseconds!
 
-const shake = createServer(bob, authorize, appKey, timeout)((err, stream) => {
+const shake = createClient(alice, appKey, timeout)(bobPublicKey, seed, (err, stream) => {
   if (err) {
     log(`! ${err}`)
     process.exit(1)
