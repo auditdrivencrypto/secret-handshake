@@ -10,7 +10,7 @@ const appKey = Buffer.from(process.argv[2], 'hex')
 const bobPublicKey = Buffer.from(process.argv[3], 'hex') // server
 const seed = null // how do we get this fro shs1testclient ?
 
-const timeout = 1e3 // I hope this is milliseconds!
+const timeout = 10e3 // I hope this is milliseconds!
 
 const shake = createClient(alice, appKey, timeout)(bobPublicKey, seed, (err, stream) => {
   if (err) {

@@ -10,7 +10,7 @@ const bob = { // the keypair of the server
   publicKey: Buffer.from(process.argv[4], 'hex')
 }
 const authorize = (pubKey, cb) => cb(null, true) // all clients are allowed to connect
-const timeout = 1e3 // I hope this is milliseconds!
+const timeout = 10e3 // I hope this is milliseconds!
 
 const shake = createServer(bob, authorize, appKey, timeout)((err, stream) => {
   if (err) {
