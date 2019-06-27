@@ -1,6 +1,7 @@
 'use strict'
 var sodium      = require('chloride')
 
+// var keypair     = sodium.crypto_box_seed_keypair
 var from_seed   = sodium.crypto_sign_seed_keypair
 var shared      = sodium.crypto_scalarmult
 var hash        = sodium.crypto_hash_sha256
@@ -36,9 +37,10 @@ exports.initialize = function (state) {
   if(state.seed) state.local = from_seed(state.seed)
 
   //TODO: sodium is missing box_seed_keypair. should make PR for that.
+  // mix: sodium-native has this fn https://github.com/sodium-friends/sodium-native
 
   var _key = from_seed(state.random)
-//  var kx = keypair(random)
+  //  var kx = keypair(random)
   var kx_pk = curvify_pk(_key.publicKey)
   var kx_sk = curvify_sk(_key.secretKey)
 
@@ -187,7 +189,3 @@ exports.toKeys = function (keys) {
     return sodium.crypto_sign_seed_keypair(keys)
   return keys
 }
-
-
-
-
