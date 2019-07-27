@@ -49,10 +49,10 @@ tape('test handshake', function (t) {
     })
 
   var r = Math.random()
-  var bobHS = shs.server(bob, function (public, cb) {
-      t.deepEqual(public, alice.publicKey)
+  var bobHS = shs.server(bob, function (publicKey, cb) {
+      t.deepEqual(publicKey, alice.publicKey)
 
-      if(deepEqual(public, alice.publicKey)) cb(null, {okay: true, random: r})
+      if(deepEqual(publicKey, alice.publicKey)) cb(null, {okay: true, random: r})
       else
         cb(new Error('unauthorized'))
 
@@ -85,10 +85,10 @@ function bitflipTest(t, test) {
       if(++errs === 2) t.end()
     })
 
-  var bobHS = shs.server(bob, function (public, cb) {
-      t.deepEqual(public, alice.publicKey)
+  var bobHS = shs.server(bob, function (publicKey, cb) {
+      t.deepEqual(publicKey, alice.publicKey)
 
-      if(deepEqual(public, alice.publicKey)) cb(null)
+      if(deepEqual(publicKey, alice.publicKey)) cb(null)
       else
         cb(new Error('unauthorized'))
 
@@ -280,8 +280,8 @@ tape('test handshake', function (t) {
     })
 
   var r = Math.random()
-  var bobHS = shs.server(bob, function (public, cb) {
-      t.deepEqual(public, alice.publicKey)
+  var bobHS = shs.server(bob, function (publicKey, cb) {
+      t.deepEqual(publicKey, alice.publicKey)
       cb(null, {okay: true, random: r})
     }, app_key, 100)
       (function (err, stream) {
