@@ -20,7 +20,7 @@ module.exports = function (stateless) {
       if('function' == typeof seed)
         cb = seed, seed = null
 
-      //alice may be null.
+      //alice may be null, e.g. https://github.com/ssbc/ssb-invite/blob/b93918b3e6adcb8dd68674fdbb270b49ff07f2a8/index.js#L219
       var state = stateless.initialize({
         app_key: app_key,
         local: alice,
