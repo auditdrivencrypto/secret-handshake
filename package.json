@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git://github.com/auditdrivencrypto/secret-handshake.git"
   },
+  "files": [
+    "*.js"
+  ],
   "scripts": {
     "prepublishOnly": "npm ls && npm test",
     "test": "npm-run-all test:original test:shs1-test",
