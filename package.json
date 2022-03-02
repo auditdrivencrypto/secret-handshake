@@ -2,13 +2,13 @@
   "name": "secret-handshake",
   "description": "a simple and highly private secure-channel protocol",
   "version": "1.1.20",
-  "homepage": "https://github.com/dominictarr/secret-handshake",
+  "homepage": "https://github.com/auditdrivencrypto/secret-handshake",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/secret-handshake.git"
+    "url": "git://github.com/auditdrivencrypto/secret-handshake.git"
   },
   "scripts": {
-    "prepublishOnly": "npm ls &&  npm test",
+    "prepublishOnly": "npm ls && npm test",
     "test": "npm-run-all test:original test:shs1-test",
     "test:original": "set -e; for t in test/*.js; do node $t; done",
     "test:shs1-test": "npm-run-all test:shs1-test:*",
